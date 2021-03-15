@@ -1,4 +1,4 @@
-from component_filegen import gen_file
+from src_project.component_filegen import gen_file
 
 
 def main():
@@ -31,9 +31,6 @@ def main():
         yn = input("New output ?(Y/N)")
     print("Computation function definition :")
     comp_f = input("Your computation function :")
-    print("-----------------------")
-    print(units_i)
-    print(units_o)
     gen_file(f_name, name, inputs, outputs, units_i, units_o, comp_f)
 
 
