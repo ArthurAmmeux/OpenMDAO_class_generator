@@ -1,3 +1,6 @@
+from textwrap import indent
+
+
 def gen_file(f_name, c_name, inputs, outputs, units_i, units_o, comp_f):
     f = open("{}.py".format(f_name), "x")
     f.write("import numpy as np\nimport openmdao.api as om\n\n\n")
@@ -15,4 +18,4 @@ def gen_file(f_name, c_name, inputs, outputs, units_i, units_o, comp_f):
             f.write('\n\t\tself.add_output("{}", val=np.nan, units="{}")'.format(outputs[i], units_o[i][1]))
     f.write("\n\n\tdef setup_partials(self):\n\t\tself.declare_partials('*', '*', method='fd')\n")
     f.write("\n\tdef compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):")
-    f.write("\n\t\t{}\n".format(comp_f))
+    f.write("\n" + indent(comp_f, prefix="\t\t") + "\n")
