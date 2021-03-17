@@ -4,4 +4,4 @@
 
 Generates code to make OpenMDAO components and groups
 
-A GUI will eventually be available
+A GUI is available
