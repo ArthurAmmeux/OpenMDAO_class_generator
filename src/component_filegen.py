@@ -2,6 +2,7 @@ from textwrap import indent
 
 
 def gen_file(f_name, c_name, inputs, outputs, units_i, units_o, comp_f):
+
     f = open("{}.py".format(f_name), "x")
     f.write("import numpy as np\nimport openmdao.api as om\n\n\n")
     f.write("class {}(om.ExplicitComponent):\n".format(c_name))

@@ -1,4 +1,5 @@
-from component_print import print_code
+from src_project.component_print import print_code
+
 
 def main():
     name = input("Component name :")
@@ -20,5 +21,5 @@ def main():
     print_code(name, inputs, outputs, comp_f)
 
 
-if __name__ == main():
+if __name__ == '__main__':
     main()

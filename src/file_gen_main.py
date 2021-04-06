@@ -34,5 +34,5 @@ def main():
     gen_file(f_name, name, inputs, outputs, units_i, units_o, comp_f)
 
 
-if __name__ == main():
+if __name__ == '__main__':
     main()
