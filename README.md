@@ -18,6 +18,6 @@ Generates code to make OpenMDAO components and groups
 
 - The equations syntax has to be understandable by python (* to multiply, / to divide ...), variables do not need to be declared, you should only write one equation per line and your equations should be in logical order. Functions are supported by the program and this means that a variable containing parentheses will not be recognised
 
-- Examples of correct synthax are available in Ipyvuetify GUI in the second and third blocks of code
+- Examples of correct syntax are available in Ipyvuetify GUI in the second and third blocks of code
 
 - When you have selected the right type and typed all your equations you can press the 'print code' button, it will print the code for all your om.Components/om.Groups
