@@ -6,7 +6,7 @@ Generates code to make OpenMDAO components and groups
 
 ## How to use the program ?
 
-- Launch Ipyvuetify GUI in the src folder 
+- Launch Ipyvuetify GUI in the src folder with jupyter notebook
 
 - Run the first block of code
 
