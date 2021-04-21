@@ -76,7 +76,7 @@ def gen_string(result):
     s = ""
     if result[0][0] == "None" and len(result) == 1:
         comp = result[0][1]
-        s += "import numpy as np\nimport openmdao.api as om\n"
+        s += "import numpy as np\nimport openmdao.api as om\n\n"
         for i in range(len(comp)):
             s += "\n"
             comp_f = comp[i].equation
