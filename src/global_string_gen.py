@@ -19,6 +19,10 @@ class CompData:
 
 
 def is_group(str):
+    """
+    :param str: input string to be tested
+    :return: True if the string contains a group
+    """
     if "## " in str:
         return True
     return False
