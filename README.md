@@ -2,7 +2,7 @@
 
 @Author Arthur Ammeux
 
-Generates code to make OpenMDAO components and groups
+Generates code to make OpenMDAO components and groups (implementing the om.Component and om.Group class)
 
 ## How to use the program ?
 
