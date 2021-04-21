@@ -12,9 +12,9 @@ Generates code to make OpenMDAO components and groups
 
 - Write your equations in the __Equations__ text area with the following synthax:
 
-  - If you want to create a series of om.Component: use a hashtag followed by a space as a prefix to your component's names, you should write your component's names and then your equations after at least one line break
+  - If you want to create a series of om.Component: use a hashtag followed by a space as a prefix to your component's names, you should write your component's names and then your equations after at least one line break (*Example: # Component_1*)
 
-  - If you want to create one or more om.Group with some om.Component: use double hashtags followed by a space as a prefix to your group's names (prefix for components is stated above), you should write your group's name and then break the line at least once and write your components as stated above
+  - If you want to create one or more om.Group with some om.Component: use double hashtags followed by a space as a prefix to your group's names (prefix for components is stated above), you should write your group's name and then break the line at least once and write your components as stated above (*Example: ## Group_1*)
 
 - The equations syntax has to be understandable by python (* to multiply, / to divide ...), variables do not need to be declared, you should only write one equation per line and your equations should be in logical order. Functions are supported by the program and this means that a variable containing parentheses will not be recognised
 
