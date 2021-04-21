@@ -2,6 +2,10 @@ import re
 
 
 def is_empty(str):
+    """
+    :param str: input string
+    :return: a boolean, True if the string is empty meaning contains only spaces, tabs and line breaks
+    """
     for l in str:
         if l != '\s' and l != '\n' and l != '\t':
             return False
@@ -9,6 +13,10 @@ def is_empty(str):
 
 
 def format_str(str):
+    """
+    :param str: input string
+    :return: a copy of the input string but with no empty lines
+    """
     lines = str.split("\n")
     non_empty_lines = [line for line in lines if line.strip() != ""]
     str_ = ""
@@ -18,6 +26,10 @@ def format_str(str):
 
 
 def parse_group(str):
+    """
+    :param str: input string
+    :return: a list of group names and their associated raw text
+    """
     p_str = re.split(r"[#]#\s", str)
     groups = []
 

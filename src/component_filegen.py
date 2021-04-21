@@ -14,7 +14,7 @@ def gen_file(f_name, c_name, inputs, outputs, units_i, units_o, comp_f):
             f.write('\n\t\tself.add_input("{}", val=np.nan, units="{}")'.format(inputs[i], units_i[i][1]))
     for i in range(0, len(outputs)):
         if units_o[i][0]:
-            f.write('\n\t\tself.add_output("{}", val=np.nan)'.format(outputs[i]))
+            f.write('\n\t\tself.add_output("{}")'.format(outputs[i]))
         else:
             f.write('\n\t\tself.add_output("{}", val=np.nan, units="{}")'.format(outputs[i], units_o[i][1]))
     f.write("\n\n\tdef setup_partials(self):\n\t\tself.declare_partials('*', '*', method='fd')\n")

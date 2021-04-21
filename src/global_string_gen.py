@@ -1,8 +1,8 @@
 from group_parse import parse_group
 from component_parse import parse_comp
 from variable_recognition import get_variables, edit_function
-from group_print import print_group
-from component_print import print_code
+from group_string import group_str
+from component_string import component_str
 
 
 class CompData:
@@ -68,33 +68,35 @@ def total_parse(str):
     return result
 
 
-def print_all(result):
+def gen_string(result):
     """
     :param result: a list of group names associated with their list_of_components containing CompData instances
-    :return: prints groups and their associated components as om.Groups and om.Components
+    :return: a string with groups and their associated components as om.Groups and om.Components
     """
+    s = ""
     if result[0][0] == "None" and len(result) == 1:
         comp = result[0][1]
-        print("import numpy as np\nimport openmdao.api as om\n")
+        s += "import numpy as np\nimport openmdao.api as om\n"
         for i in range(len(comp)):
-            print()
+            s += "\n"
             comp_f = comp[i].equation
             var_in, var_out = comp[i].var_in, comp[i].var_out
             comp_f = edit_function(var_in, var_out, comp_f)
             c_name = comp[i].name
-            print_code(c_name, var_in, var_out, comp[i].units_i, comp[i].units_o, comp_f)
+            s += component_str(c_name, var_in, var_out, comp[i].units_i, comp[i].units_o, comp_f)
     else:
         for i in range(len(result)):
-            print("# ---New Group---\n")
-            print_group(result[i][0], [[comp_data.name, comp_data.name, comp_data.name + "_pack"] for comp_data in result[i][1]], 0)
-            print()
+            s += "# ---New Group---\n\n"
+            s += group_str(result[i][0], [[comp_data.name, comp_data.name, comp_data.name + "_pack"] for comp_data in result[i][1]], 0)
+            s += "\n"
             for comp_data in result[i][1]:
-                print()
+                s += "\n"
                 inputs = comp_data.var_in
                 outputs = comp_data.var_out
                 comp_f = edit_function(inputs, outputs, comp_data.equation)
-                print_code(comp_data.name, inputs, outputs, comp_data.units_i, comp_data.units_o, comp_f)
-            print("# ---End of Group---")
+                s += component_str(comp_data.name, inputs, outputs, comp_data.units_i, comp_data.units_o, comp_f)
+            s += "# ---End of Group---\n"
+    return s
 
 
 TEXT = "\n" \
@@ -124,7 +126,7 @@ TEXT = "\n" \
 
 
 def main():
-    print_all(total_parse(TEXT))
+    print(gen_string(total_parse(TEXT)))
 
 
 if __name__ == '__main__':
