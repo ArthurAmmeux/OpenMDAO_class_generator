@@ -18,6 +18,8 @@ Generates code to make OpenMDAO components and groups (implementing the om.Compo
 
 - The equations syntax has to be understandable by python (* to multiply, / to divide ...), variables do not need to be declared, you should only write one equation per line and your equations should be in logical order. Functions are supported by the program and this means that a variable containing parentheses will not be recognised
 
+- You can add units to output variables by adding a #[your_unit] decorator at the end of the line where you define the output variable (*Example: y = x + 1 #[kg]*), this unit will still be modifiable afterwards 
+
 - Examples of correct syntax are available in __Ipyvuetify GUI__ in the second and third blocks of code
 
 - When you have typed all your equations you can press the __Analyse__ button, it will generate a sheet with all the variables found. You can modify this sheet and change variable names, units and default values (there cannot be any default values for outputs)
