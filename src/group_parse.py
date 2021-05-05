@@ -7,7 +7,7 @@ def is_empty(str):
     :return: a boolean, True if the string is empty meaning contains only spaces, tabs and line breaks
     """
     for l in str:
-        if l != '\s' and l != '\n' and l != '\t':
+        if l != ' ' and l != '\n' and l != '\t':
             return False
     return True
 
@@ -25,6 +25,18 @@ def format_str(str):
     return str_
 
 
+def format_group(gr):
+    """
+    :param gr: group name
+    :return: removes spaces before and after the name
+    """
+    while len(gr) > 1 and gr[0] == ' ':
+        gr = gr[1:]
+    while len(gr) > 1 and gr[-1] == ' ':
+        gr = gr[:-1]
+    return gr
+
+
 def parse_group(str):
     """
     :param str: input string
@@ -39,6 +51,7 @@ def parse_group(str):
 
     for c in p_str:
         g = c.split('\n', 1)
+        g[0] = format_group(g[0])
         g[1] = format_str(g[1])
         groups.append([g[0], g[1]])
 

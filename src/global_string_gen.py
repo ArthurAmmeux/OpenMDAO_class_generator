@@ -47,9 +47,9 @@ def total_parse(str):
                 comp_data = CompData()
                 comp_data.group = g[0]
                 comp_data.name = c[0]
-                comp_data.var_in, comp_data.var_out = get_variables(c[1])
+                comp_data.var_in, comp_data.var_out, comp_data.units_o = get_variables(c[1])
                 comp_data.units_i = [['None', 'np.nan'] for i in range(len(comp_data.var_in))]
-                comp_data.units_o = ['None'] * len(comp_data.var_out)
+                # comp_data.units_o = ['None'] * len(comp_data.var_out)
                 comp_data.equation = c[1]
                 list_of_components.append(comp_data)
 
@@ -61,9 +61,9 @@ def total_parse(str):
         for c in comp:
             comp_data = CompData()
             comp_data.name = c[0]
-            comp_data.var_in, comp_data.var_out = get_variables(c[1])
+            comp_data.var_in, comp_data.var_out, comp_data.units_o = get_variables(c[1])
             comp_data.units_i = [['None', 'np.nan'] for i in range(len(comp_data.var_in))]
-            comp_data.units_o = ['None'] * len(comp_data.var_out)
+            # comp_data.units_o = ['None'] * len(comp_data.var_out)
             comp_data.equation = c[1]
             list_of_components.append(comp_data)
 
@@ -72,15 +72,19 @@ def total_parse(str):
     return result
 
 
-def gen_string(result):
+def gen_string(result, np=False):
     """
+    :param np: boolean to specify if the user wants to import numpy
     :param result: a list of group names associated with their list_of_components containing CompData instances
     :return: a string with groups and their associated components as om.Groups and om.Components
     """
     s = ""
     if result[0][0] == "None" and len(result) == 1:
         comp = result[0][1]
-        s += "import numpy as np\nimport openmdao.api as om\n\n"
+        s += "import openmdao.api as om\n"
+        if np:
+            s += "import numpy as np\n"
+        s += "\n"
         for i in range(len(comp)):
             s += "\n"
             comp_f = comp[i].equation
@@ -91,7 +95,8 @@ def gen_string(result):
     else:
         for i in range(len(result)):
             s += "# ---New Group---\n\n"
-            s += group_str(result[i][0], [[comp_data.name, comp_data.name, comp_data.name + "_pack"] for comp_data in result[i][1]], 0)
+            c_data = [[comp_data.name, comp_data.name, comp_data.name + "_pack"] for comp_data in result[i][1]]
+            s += group_str(result[i][0], c_data, 0, np)
             s += "\n"
             for comp_data in result[i][1]:
                 s += "\n"
@@ -112,7 +117,7 @@ TEXT = "\n" \
        "z = w**2 +a*4\n" \
        "\n" \
        "# Component2\n" \
-       "a = b + c*2\n" \
+       "a = b_/(c_ + c**2)\n" \
        "d = e + f\n" \
        "## Group2\n" \
        "\n" \
@@ -130,7 +135,7 @@ TEXT = "\n" \
 
 
 def main():
-    print(gen_string(total_parse(TEXT)))
+    print(gen_string(total_parse(TEXT), True))
 
 
 if __name__ == '__main__':

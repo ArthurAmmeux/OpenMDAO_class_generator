@@ -10,7 +10,7 @@ def component_str(c_name, inputs, outputs, units_i, units_o, comp_f):
     :return: a string containing the code of an om.Component
     """
     s = ""
-    s += "class " + c_name + " (om.ExplicitComponent):\n\n"
+    s += "class " + c_name + "(om.ExplicitComponent):\n\n"
     s += "\tdef setup(self):\n"
     for i in range(0, len(inputs)):
         if units_i[i][0] == 'None':

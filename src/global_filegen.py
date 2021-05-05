@@ -1,5 +1,6 @@
 from textwrap import indent
 from variable_recognition import edit_function
+import os
 
 
 def open_file(f_name):
@@ -14,8 +15,9 @@ def open_file(f_name):
         return open_file(f_name + "(1)")
 
 
-def generate_file(result):
+def generate_file(result, np=False):
     """
+    :param np: boolean to specify if the user wants to import numpy
     :param result: a list of group names associated with their list_of_components containing CompData instances
     :return: generates one file per group with python code
     """
@@ -23,7 +25,10 @@ def generate_file(result):
         comp = result[0][1]
         f_name = comp[0].name
         f = open_file(f_name)
-        f.write("import numpy as np\nimport openmdao.api as om\n\n\n")
+        f.write("import openmdao.api as om\n")
+        if np:
+            f.write("import numpy as np\n")
+        f.write("\n\n")
         for i in range(len(comp)):
             comp_f = comp[i].equation
             var_in, var_out = comp[i].var_in, comp[i].var_out
@@ -32,12 +37,16 @@ def generate_file(result):
             comp_f = edit_function(var_in, var_out, comp_f)
             c_name = comp[i].name
             add_component(f, c_name, var_in, var_out, units_i, units_o, comp_f)
-
+        f.close()
+        os.system("black " + f_name + ".py")
     else:
         for i in range(len(result)):
             f_name = result[i][0]
             f = open_file(f_name)
-            f.write("import numpy as np\nimport openmdao.api as om\n\n\n")
+            f.write("import openmdao.api as om\n")
+            if np:
+                f.write("import numpy as np\n")
+            f.write("\n\n")
             add_group(f, result[i][0], [[comp.name, comp.name]for comp in result[i][1]], 0)
             for comp_data in result[i][1]:
                 comp_f = comp_data.equation
@@ -47,6 +56,9 @@ def generate_file(result):
                 comp_f = edit_function(var_in, var_out, comp_f)
                 c_name = comp_data.name
                 add_component(f, c_name, var_in, var_out, units_i, units_o, comp_f)
+            f.close()
+            os.system("black " + f_name + ".py")
+            print("black " + f_name + ".py")
 
 
 def add_component(f, c_name, inputs, outputs, units_i, units_o, comp_f):

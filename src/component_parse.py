@@ -12,10 +12,22 @@ def is_empty(str):
     return True
 
 
+def format_comp(comp):
+    """
+    :param comp: component name
+    :return: removes spaces before and after the name
+    """
+    while len(comp) > 1 and comp[0] == ' ':
+        comp = comp[1:]
+    while len(comp) > 1 and comp[-1] == ' ':
+        comp = comp[:-1]
+    return comp
+
+
 def format_str(str):
     """
     :param str: input string
-    :return: a copy of the input string but with no empty lines
+    :return: a copy of the input string but with no empty lines and no tabs
     """
     lines = str.split("\n")
     non_empty_lines = [line for line in lines if line.strip() != ""]
@@ -39,6 +51,7 @@ def parse_comp(str):
 
     for c in p_str:
         comp = c.split('\n', 1)
+        comp[0] = format_comp(comp[0])
         comp[1] = format_str(comp[1])
         components.append([comp[0], comp[1]])
 
