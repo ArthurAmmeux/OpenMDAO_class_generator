@@ -22,6 +22,6 @@ Generates code to make OpenMDAO components and groups (implementing the om.Compo
 
 - When you have typed all your equations you can press the __Analyse__ button, it will generate a sheet with all the variables found. You can modify this sheet and change variable names, units and default values (there cannot be any default values for outputs)
 
-- Once you are done modifying the sheet, you can press either the __Print code__ button which will print your code in a markdown style or the __Generate File__ button which will generate one file with all your components if you chose to write om.Component only or one file per group if you have written multiple om.Group, all the files are generated in the current directory and their names is either the name of the first om.Component or the name of the om.Group
+- Once you are done modifying the sheet, you can choose whether or not to include numpy in the generated code by ticking the __checkbox__. Then you can press either the __Print code__ button which will print your code in a markdown style or the __Generate File__ button which will generate one file with all your components if you chose to write om.Component only or one file per group if you have written multiple om.Group, all the files are generated in the current directory and their names is either the name of the first om.Component or the name of the om.Group
 
 - If you want to use the program again, it is necessary to re-run the first cell of __Ipyvuetify GUI__
