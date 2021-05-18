@@ -3,6 +3,7 @@ from component_parse import parse_comp
 from variable_recognition import get_variables, edit_function
 from group_string import group_str
 from component_string import component_str
+from higher_parse import parse_higher
 
 
 class CompData:
@@ -16,6 +17,15 @@ class CompData:
     var_out = []
     units_i = []
     units_o = []
+
+
+class HGdata:
+    """
+    a class to store data about higher groups
+    """
+    name = "Default_name"
+    children = []
+    last = False
 
 
 def is_group(str):
@@ -70,6 +80,53 @@ def total_parse(str):
         result = [["None", list_of_components]]
 
     return result
+
+
+def is_higher_group(str):
+    if '### ' in str:
+        return True
+    return False
+
+
+def recursive_parse(str, name="Default_name"):
+    """
+    :param str: string to be parsed
+    :param name: name of the higher group
+    :return: a recursive data structure HGdata
+    """
+    if is_higher_group(str):
+        hgr = parse_higher(str)
+        hg_data = HGdata()
+        hg_data.name = name
+        print(hgr)
+        for i in range(len(hgr)):
+            print("for", i)
+            hg_data.children.append(recursive_parse(hgr[i][1], hgr[i][0]))
+            print(hg_data.children[i].name)
+            print(len(hg_data.children))
+        print(len(hg_data.children))
+        print("endfor", i)
+    else:
+        print("groups")
+        hg_data = HGdata()
+        hg_data.name = name
+        hg_data.last = True
+        hg_data.children = total_parse(str)
+    return hg_data
+
+
+def aggregate_result(hg_data):
+    """
+    :param hg_data: higher group data to be aggregated
+    :return: a global result with all groups, components and variables
+    """
+    if hg_data.last:
+        return hg_data.children
+    else:
+        result = []
+        for child in hg_data.children:
+            result.append(aggregate_result(child))
+        return result
 
 
 def gen_string(result, np=False):
@@ -133,9 +190,22 @@ TEXT = "\n" \
        "d = e + f*3\n" \
        "\n"
 
+TEXT2 = "\n" \
+        "#### HHG1\n" \
+        "### HG1\n" \
+        "## G1\n" \
+        "# C1\n" \
+        "y = x+1\n" \
+        "### HG2\n" \
+        "## G2\n" \
+        "# C2\n" \
+        "y = x+1\n"
+
 
 def main():
-    print(gen_string(total_parse(TEXT), True))
+    # print(gen_string(total_parse(TEXT), True))
+    print(recursive_parse(TEXT2))
+    # print(aggregate_result(recursive_parse(TEXT2)))
 
 
 if __name__ == '__main__':

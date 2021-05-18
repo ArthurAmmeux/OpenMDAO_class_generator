@@ -6,6 +6,8 @@ def component_str(c_name, inputs, outputs, units_i, units_o, comp_f):
     :param c_name: component name
     :param inputs: list of input variables "renamed"
     :param outputs: list of output variables "renamed"
+    :param units_o: list of units of outputs
+    :param units_i: list of units of inputs
     :param comp_f: edited computation function
     :return: a string containing the code of an om.Component
     """

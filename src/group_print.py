@@ -11,9 +11,6 @@ def print_group(g_name, subsystems, init):
     """
     print("import openmdao.api as om")
     print("import numpy as np\n\n")
-    # for i in range(len(subsystems)):
-    #   print("from {} import {}".format(subsystems[i][2], subsystems[i][1]))
-    # print("\n")
     print("class {}(om.Group):\n".format(g_name))
     if init != 0:
         print("\tdef initialize(self):")

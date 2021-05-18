@@ -4,6 +4,12 @@ from variable_recognition import get_variables, edit_function
 
 
 def print_components(str):
+
+    """
+    :param str: input string that is to be parsed
+    :return: prints the components found in the input string as om.Components
+    """
+
     comp = parse_comp(str)
     for i in range(len(comp)):
         print("---New Component---\n")
