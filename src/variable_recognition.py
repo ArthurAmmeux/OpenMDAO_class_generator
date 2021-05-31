@@ -8,6 +8,17 @@ LETTERS = "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMONPQRSTUVWXYZ"
 PACKAGES = ["numpy.", "np.", "mat.", "math."]
 
 
+class Variable:
+    def __init__(self, symbol='Default', name='Default_name', unit='None', val='np.nan'):
+        self.symbol = symbol
+        self.name = name
+        if symbol != 'Default' and name == 'Default_name':
+            self.name = symbol + '_name'
+        self.unit = unit
+        self.val = val
+        self.param = []
+
+
 def string_to_list(str):
     """
     :param str: input string
@@ -76,6 +87,7 @@ def add_var_in(x, var_in, var_out):
     :return: adds the variable to var_in if the conditions are verified and returns True if the variable has been added
     """
     if is_not_in(x, KEYWORDS) and is_not_in(x, var_in) and is_not_in(x, var_out) and check_pack(x):
+        var = Variable(symbol=x)
         var_in.append(x)
         return True
     return False
@@ -89,6 +101,7 @@ def add_var_out(x, var_in, var_out):
     :return: adds the variable to var_out if the conditions are verified and returns True if the variable has been added
     """
     if is_not_in(x, KEYWORDS) and is_not_in(x, var_in) and is_not_in(x, var_out) and check_pack(x):
+        var = Variable(symbol=x)
         var_out.append(x)
         return True
     return False
@@ -162,7 +175,7 @@ def get_variables(equation):
         first = True
         if '=' not in lines[i]:
             first = False
-        groups = (re.split(RE_SYMBOLS, lines[i]))
+        groups = re.split(RE_SYMBOLS, lines[i])
         if '' in groups:
             groups.remove('')
         if not is_not_in(groups[0], KEYWORDS):

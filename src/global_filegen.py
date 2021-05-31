@@ -1,5 +1,6 @@
 from textwrap import indent
 from variable_recognition import edit_function
+import global_string_gen as gs
 import os
 
 
@@ -58,7 +59,28 @@ def generate_file(result, np=False):
                 add_component(f, c_name, var_in, var_out, units_i, units_o, comp_f)
             f.close()
             os.system("black " + f_name + ".py")
-            print("black " + f_name + ".py")
+
+
+def new_generate_file(hg_data, np=False):
+    """
+    :param hg_data: input parsed data as Hg_data
+    :param np: boolean to specify if numpy is to be imported
+    :return: generates as many files as there are highest level groups
+    """
+    if hg_data.last:
+        generate_file(hg_data.children, np=np)
+    else:
+        for child in hg_data.children:
+            s = gs.rec_gen_string(child, np=np)
+            f_name = child.name
+            f = open_file(f_name)
+            f.write("import openmdao.api as om\n")
+            if np:
+                f.write("import numpy as np\n")
+            f.write("\n\n")
+            f.write(s)
+            f.close()
+            os.system("black " + f_name + ".py")
 
 
 def add_component(f, c_name, inputs, outputs, units_i, units_o, comp_f):

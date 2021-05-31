@@ -1,36 +1,43 @@
 import ipywidgets as widgets
 import ipyvuetify as v
 import ipysheet
-import global_string_gen as generate_string
-from global_filegen import generate_file
+import global_string_gen as gen_str
+from global_filegen import new_generate_file
 from parse_values import parse_values
+from delete import delete_var
 import numpy as np
 from IPython.display import display, Markdown
 
+HG_DATA = []
 RESULT = []
 IN = []
 D_VALUES = {}
+DELETED_VAR = []
+GEN_OR_PRINT = False
 
 
-def init(In=[]):
+def init(in_):
+    # Function to initialize the GUI
     global RESULT
     RESULT = []
 
     global IN
-    IN = In
+    IN = in_
 
     global D_VALUES
     D_VALUES = {}
 
     global copy_but
-    copy_but = v.Btn(children=['Copy cells'], color='blue lighten-1', height='55px', width='250px')
+    copy_but = v.Btn(children=['Copy cells'], color='blue lighten-1', height='35px', width='250px')
     copy_but.on_event('click', copy_click)
 
     global copy_field_1
-    copy_field_1 = v.TextField(v_model="1", color='blue lighten-4', outlined=True, label='First cell')
+    copy_field_1 = widgets.IntText(value="1", description='First cell', min=1, step=1)
+    copy_field_1.layout.width = '140px'
 
     global copy_field_2
-    copy_field_2 = v.TextField(v_model="2", color='blue lighten-4', outlined=True, label='Last cell')
+    copy_field_2 = widgets.IntText(value="2", description='Last cell', min=1, step=1)
+    copy_field_2.layout.width = '140px'
 
     global analyse_but
     analyse_but = v.Btn(children=['Analyse'], color='blue lighten-1')
@@ -61,38 +68,112 @@ def init(In=[]):
     global hb
     hb = widgets.Box(children=[copy_but, copy_field_1, copy_field_2])
     hb.layout.display = 'flex'
-    hb.layout.border = '2px'
-    hb.layout.justify_content = 'space-around'
-    hb.layout.width = '75%'
+    hb.layout.margin = '30px 10px 10px 50px'
+    hb.layout.border_style = 'solid'
+    hb.layout.border_width = '5px'
+    hb.layout.justify_content = 'center'
+    hb.layout.align_items = 'center'
+    hb.layout.align_content = 'center'
+    hb.layout.width = '90%'
 
     global vb
-    vb = widgets.VBox(children=[hb, function, analyse_but])
+    vb = widgets.Box(children=[hb, function, analyse_but])
+    vb.layout.display = 'flex'
+    vb.layout.flex_flow = 'column'
+    vb.layout.align_items = 'stretch'
+    vb.layout.border_style = 'solid'
+    vb.layout.border_width = '5px'
+    vb.layout.border_color = 'black'
     return vb
 
 
 def copy_click(widget, event, data):
-    n1 = int(copy_field_1.v_model)
-    n2 = int(copy_field_2.v_model) + 1
+    # Function called when the copy cells button is pressed
+    n1 = int(copy_field_1.value)
+    n2 = int(copy_field_2.value) + 1
     copy = ""
     global D_VALUES
     if 0 < n1 < n2 <= len(IN):
         for cell in IN[n1:n2]:
-            if len(cell) >= 9:
-                if cell[0:9] != '# Exclude':
-                    copy += cell + "\n"
+            if len(cell) >= 6:
+                if cell[0:6] != '# Init':
+                    if len(cell) >= 9:
+                        if cell[0:9] != '# Exclude':
+                            copy += cell + "\n\n"
                 else:
                     parse_values(cell, D_VALUES)
             else:
-                copy += cell + "\n"
+                copy += cell + "\n\n"
     function.v_model = copy
 
 
+def inner_analysis_in(c, var_in, i, group_cells, del_but):
+    group_cells.append([var_in[0], []])
+
+    del_but += [v.Btn(children=["Delete"], color="blue lighten-2")]
+
+    def del_click(widget, event, data):
+        global DELETED_VAR
+        if widget.children[0] == "Delete":
+            DELETED_VAR.append(i)
+            widget.children = ["Deleted"]
+            widget.color = "red lighten-2"
+        else:
+            DELETED_VAR.remove(i)
+            widget.children = ["Delete"]
+            widget.color = "blue lighten-2"
+
+    del_but[i].on_event("click", del_click)
+
+    ipysheet.cell(i, 0, c.group, background_color='#EEEEEE', read_only=True)
+    ipysheet.cell(i, 1, c.name, background_color='#EEEEEE', read_only=True)
+    group_cells[-1][1] += [ipysheet.cell(i, 2, var_in[0])]
+    group_cells[-1][1] += [ipysheet.cell(i, 3, var_in[1])]
+    ipysheet.cell(i, 4, 'input', background_color='#8EFF9B', read_only=True)
+    group_cells[-1][1] += [ipysheet.cell(i, 5, 'None')]
+    group_cells[-1][1] += [ipysheet.cell(i, 6, 'np.nan')]
+    ipysheet.cell(i, 7, del_but[i])
+    if var_in[0] in D_VALUES:
+        ipysheet.cell(i, 6, D_VALUES[var_in[0]])
+
+
+def inner_analysis_out(c, j, i, group_cells, del_but):
+    var_out = c.var_out[j]
+    group_cells.append([var_out[0], []])
+
+    del_but += [v.Btn(children=["Delete"], color="blue lighten-2")]
+
+    def del_click(widget, event, data):
+        global DELETED_VAR
+        if widget.children[0] == "Delete":
+            DELETED_VAR.append(i)
+            widget.children = ["Deleted"]
+            widget.color = "red lighten-2"
+        else:
+            DELETED_VAR.remove(i)
+            widget.children = ["Delete"]
+            widget.color = "blue lighten-2"
+
+    del_but[i].on_event("click", del_click)
+
+    ipysheet.cell(i, 0, c.group, background_color='#EEEEEE', read_only=True)
+    ipysheet.cell(i, 1, c.name, background_color='#EEEEEE', read_only=True)
+    group_cells[-1][1] += [ipysheet.cell(i, 2, var_out[0])]
+    group_cells[-1][1] += [ipysheet.cell(i, 3, var_out[1])]
+    ipysheet.cell(i, 4, 'output', background_color='#FFB48E', read_only=True)
+    group_cells[-1][1] += [ipysheet.cell(i, 5, c.units_o[j])]
+    group_cells[-1][1] += [ipysheet.cell(i, 6, '', background_color='#EEEEEE', read_only=True)]
+    ipysheet.cell(i, 7, del_but[i])
+
+
 def analyse_click(widget, event, data):
+    # Function called when the analyse button is pressed
     analyse_but.loading = True
     analyse_but.disabled = True
 
     in_str = function.v_model
-    result = generate_string.total_parse(in_str)
+    hg_data = gen_str.recursive_parse(in_str)
+    result = gen_str.aggregate_result(hg_data)
     n = 0
     for g in result:
         for c in g[1]:
@@ -100,34 +181,28 @@ def analyse_click(widget, event, data):
             n += len(c.var_out)
 
     headers = ['Group Name', 'Component Name', 'Variable Detected', 'Variable Name', 'Input/Output', 'Units',
-               'Default Value']
+               'Default Value', 'Delete Variable']
 
-    sheet = ipysheet.sheet(columns=7, rows=n, row_headers=False, column_headers=headers)
+    sheet = ipysheet.sheet(columns=8, rows=n, row_headers=False, column_headers=headers)
 
     i = 0
+    del_but = []
     for g in result:
+        group_cells = []
         for c in g[1]:
             for var_in in c.var_in:
-                ipysheet.cell(i, 0, c.group, background_color='#EEEEEE', read_only=True)
-                ipysheet.cell(i, 1, c.name, background_color='#EEEEEE', read_only=True)
-                ipysheet.cell(i, 2, var_in[0])
-                ipysheet.cell(i, 3, var_in[1])
-                ipysheet.cell(i, 4, 'input', background_color='#8EFF9B', read_only=True)
-                ipysheet.cell(i, 5, 'None')
-                ipysheet.cell(i, 6, 'np.nan')
-                if var_in[0] in D_VALUES:
-                    ipysheet.cell(i, 6, D_VALUES[var_in[0]])
+                inner_analysis_in(c, var_in, i, group_cells, del_but)
                 i += 1
             for j in range(len(c.var_out)):
-                var_out = c.var_out[j]
-                ipysheet.cell(i, 0, c.group, background_color='#EEEEEE', read_only=True)
-                ipysheet.cell(i, 1, c.name, background_color='#EEEEEE', read_only=True)
-                ipysheet.cell(i, 2, var_out[0])
-                ipysheet.cell(i, 3, var_out[1])
-                ipysheet.cell(i, 4, 'output', background_color='#FFB48E', read_only=True)
-                ipysheet.cell(i, 5, c.units_o[j])
-                ipysheet.cell(i, 6, '', background_color='#EEEEEE', read_only=True)
+                inner_analysis_out(c, j, i, group_cells, del_but)
                 i += 1
+
+            for n in range(len(group_cells)):
+                for m in range(n + 1, len(group_cells)):
+                    if group_cells[n][0] == group_cells[m][0]:
+                        for p in range(4):
+                            if group_cells[n][1][p].read_only is False and group_cells[m][1][p].read_only is False:
+                                widgets.jslink((group_cells[n][1][p], "value"), (group_cells[m][1][p], "value"))
 
     analyse_but.loading = False
     analyse_but.children = ['Analysis done']
@@ -136,6 +211,9 @@ def analyse_click(widget, event, data):
 
     global RESULT
     RESULT = result
+
+    global HG_DATA
+    HG_DATA = hg_data
 
 
 def print_click(widget, event, data):
@@ -149,44 +227,49 @@ def print_click(widget, event, data):
     arr = ipysheet.to_array(sheet)
 
     global RESULT
-
     result = RESULT
 
-    i = 0
-    for g in result:
-        for c in g[1]:
-            j = 0
-            jl = []
-            for var_in in c.var_in:
-                var_in[0] = arr[i, 2]
-                var_in[1] = arr[i, 3]
-                c.units_i[j][0] = arr[i, 5]
-                c.units_i[j][1] = arr[i, 6]
-                if var_in[1] == "del":
-                    c.var_in.remove(var_in)
-                    jl.append(j)
-                i += 1
-                j += 1
-            for n in jl:
-                c.units_i.pop(n)
-            k = 0
-            kl = []
-            for var_out in c.var_out:
-                var_out[0] = arr[i, 2]
-                var_out[1] = arr[i, 3]
-                c.units_o[k] = arr[i, 5]
-                if var_out[1] == "del":
-                    c.var_out.remove(var_out)
-                    kl.append(k)
-                i += 1
-                k += 1
-            for n in kl:
-                c.units_o.pop(n)
+    global HG_DATA
+    hg_data = HG_DATA
+
+    global DELETED_VAR
+    deleted_var = DELETED_VAR
+    deleted_var.sort(reverse=True)
+
+    global GEN_OR_PRINT
+
+    if not GEN_OR_PRINT:
+        sheet.read_only = True
+        # Modifying result to take into account changes made to the sheet
+        i = 0
+        for g in result:
+            for c in g[1]:
+                j = 0
+                for var_in in c.var_in:
+                    var_in[0] = arr[i, 2]
+                    var_in[1] = arr[i, 3]
+                    c.units_i[j][0] = arr[i, 5]
+                    c.units_i[j][1] = arr[i, 6]
+                    i += 1
+                    j += 1
+                k = 0
+                for var_out in c.var_out:
+                    var_out[0] = arr[i, 2]
+                    var_out[1] = arr[i, 3]
+                    c.units_o[k] = arr[i, 5]
+                    i += 1
+                    k += 1
+
+        # Delete deleted variables
+        for index in deleted_var:
+            delete_var(result, index)
+
+    GEN_OR_PRINT = True
 
     print_but.loading = False
     print_but.children = ['Code printed']
 
-    s = generate_string.gen_string(result, numpy_check.v_model)
+    s = gen_str.multi_rec_gen_string(hg_data, numpy_check.v_model)
     display(Markdown("```python\n" + s + "\n```"))
 
 
@@ -201,55 +284,56 @@ def gen_click(widget, event, data):
     arr = ipysheet.to_array(sheet)
 
     global RESULT
-
     result = RESULT
-    # Modifying result to take into account changes made to the sheet
-    i = 0
-    for g in result:
-        for c in g[1]:
-            j = 0
-            jl = []
-            for var_in in c.var_in:
-                var_in[0] = arr[i, 2]
-                var_in[1] = arr[i, 3]
-                c.units_i[j][0] = arr[i, 5]
-                c.units_i[j][1] = arr[i, 6]
-                if var_in[1] == "del":
-                    c.var_in.remove(var_in)
-                    jl.append(j)
-                i += 1
-                j += 1
-            for n in jl:
-                c.units_i.pop(n)
-            k = 0
-            kl = []
-            for var_out in c.var_out:
-                var_out[0] = arr[i, 2]
-                var_out[1] = arr[i, 3]
-                c.units_o[k] = arr[i, 5]
-                if var_out[1] == "del":
-                    c.var_out.remove(var_out)
-                    kl.append(k)
-                i += 1
-                k += 1
-            for n in kl:
-                c.units_o.pop(n)
+
+    global HG_DATA
+    hg_data = HG_DATA
+
+    global DELETED_VAR
+    deleted_var = DELETED_VAR
+    deleted_var.sort(reverse=True)
+
+    global GEN_OR_PRINT
+
+    if not GEN_OR_PRINT:
+        sheet.read_only = True
+        # Modifying result to take into account changes made to the sheet
+        i = 0
+        for g in result:
+            for c in g[1]:
+                j = 0
+                for var_in in c.var_in:
+                    var_in[0] = arr[i, 2]
+                    var_in[1] = arr[i, 3]
+                    c.units_i[j][0] = arr[i, 5]
+                    c.units_i[j][1] = arr[i, 6]
+                    i += 1
+                    j += 1
+                k = 0
+                for var_out in c.var_out:
+                    var_out[0] = arr[i, 2]
+                    var_out[1] = arr[i, 3]
+                    c.units_o[k] = arr[i, 5]
+                    i += 1
+                    k += 1
+
+        # Delete deleted variables
+        for index in deleted_var:
+            delete_var(result, index)
+
+    GEN_OR_PRINT = True
 
     gen_but.loading = False
     gen_but.children = ['File generated ']
 
-    generate_file(result, numpy_check.v_model)
-
-
-def init_click(widget, event, data):
-    init()
+    new_generate_file(hg_data, numpy_check.v_model)
 
 
 copy_but = v.Btn()
 
-copy_field_1 = v.TextField()
+copy_field_1 = widgets.Text()
 
-copy_field_2 = v.TextField()
+copy_field_2 = widgets.Text()
 
 analyse_but = v.Btn()
 
@@ -263,4 +347,4 @@ function = v.Textarea()
 
 hb = widgets.Box()
 
-vb = widgets.VBox()
+vb = widgets.Box()

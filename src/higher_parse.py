@@ -84,7 +84,7 @@ TEXT = "\n" \
        "x = y*3 +2\n" \
        "z = w**2 +a*4\n" \
        "\n" \
-       "####### Component2\n" \
+       "##### Component2\n" \
        "a = b + c*2\n" \
        "d = e + f\n" \
        "####### Group2\n" \

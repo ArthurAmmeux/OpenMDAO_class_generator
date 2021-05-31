@@ -10,22 +10,27 @@ class CompData:
     """
     A class to store data about components
     """
-    group = "None"
-    name = "DefaultName"
-    equation = "default_ = default + 1"
-    var_in = []
-    var_out = []
-    units_i = []
-    units_o = []
+    def __init__(self):
+        self.group = "None"
+        self.name = "DefaultName"
+        self.equation = "default_ = default + 1"
+        self.var_in = []
+        self.var_out = []
+        self.units_i = []
+        self.units_o = []
 
 
 class HGdata:
     """
     a class to store data about higher groups
     """
-    name = "Default_name"
-    children = []
-    last = False
+    def __init__(self):
+        self.name = "Default_name"
+        self.children = []
+        self.last = False
+
+    def child_app(self, children):
+        self.children.append(children)
 
 
 def is_group(str):
@@ -59,7 +64,6 @@ def total_parse(str):
                 comp_data.name = c[0]
                 comp_data.var_in, comp_data.var_out, comp_data.units_o = get_variables(c[1])
                 comp_data.units_i = [['None', 'np.nan'] for i in range(len(comp_data.var_in))]
-                # comp_data.units_o = ['None'] * len(comp_data.var_out)
                 comp_data.equation = c[1]
                 list_of_components.append(comp_data)
 
@@ -73,7 +77,6 @@ def total_parse(str):
             comp_data.name = c[0]
             comp_data.var_in, comp_data.var_out, comp_data.units_o = get_variables(c[1])
             comp_data.units_i = [['None', 'np.nan'] for i in range(len(comp_data.var_in))]
-            # comp_data.units_o = ['None'] * len(comp_data.var_out)
             comp_data.equation = c[1]
             list_of_components.append(comp_data)
 
@@ -98,16 +101,9 @@ def recursive_parse(str, name="Default_name"):
         hgr = parse_higher(str)
         hg_data = HGdata()
         hg_data.name = name
-        print(hgr)
         for i in range(len(hgr)):
-            print("for", i)
-            hg_data.children.append(recursive_parse(hgr[i][1], hgr[i][0]))
-            print(hg_data.children[i].name)
-            print(len(hg_data.children))
-        print(len(hg_data.children))
-        print("endfor", i)
+            hg_data.child_app(recursive_parse(hgr[i][1], hgr[i][0]))
     else:
-        print("groups")
         hg_data = HGdata()
         hg_data.name = name
         hg_data.last = True
@@ -125,12 +121,13 @@ def aggregate_result(hg_data):
     else:
         result = []
         for child in hg_data.children:
-            result.append(aggregate_result(child))
+            result += aggregate_result(child)
         return result
 
 
-def gen_string(result, np=False):
+def gen_string(result, np=False, imports=False):
     """
+    :param imports: boolean to specify if imports are required
     :param np: boolean to specify if the user wants to import numpy
     :param result: a list of group names associated with their list_of_components containing CompData instances
     :return: a string with groups and their associated components as om.Groups and om.Components
@@ -138,10 +135,6 @@ def gen_string(result, np=False):
     s = ""
     if result[0][0] == "None" and len(result) == 1:
         comp = result[0][1]
-        s += "import openmdao.api as om\n"
-        if np:
-            s += "import numpy as np\n"
-        s += "\n"
         for i in range(len(comp)):
             s += "\n"
             comp_f = comp[i].equation
@@ -151,9 +144,8 @@ def gen_string(result, np=False):
             s += component_str(c_name, var_in, var_out, comp[i].units_i, comp[i].units_o, comp_f)
     else:
         for i in range(len(result)):
-            s += "# ---New Group---\n\n"
-            c_data = [[comp_data.name, comp_data.name, comp_data.name + "_pack"] for comp_data in result[i][1]]
-            s += group_str(result[i][0], c_data, 0, np)
+            c_data = [[comp_data.name, comp_data.name] for comp_data in result[i][1]]
+            s += group_str(result[i][0], c_data, 0, np, imports=imports)
             s += "\n"
             for comp_data in result[i][1]:
                 s += "\n"
@@ -161,7 +153,37 @@ def gen_string(result, np=False):
                 outputs = comp_data.var_out
                 comp_f = edit_function(inputs, outputs, comp_data.equation)
                 s += component_str(comp_data.name, inputs, outputs, comp_data.units_i, comp_data.units_o, comp_f)
-            s += "# ---End of Group---\n"
+            s += "\n"
+    return s
+
+
+def rec_gen_string(hg_data, np=False):
+    s = ""
+    if hg_data.last:
+        names = [[hg_data.children[i][0], hg_data.children[i][0]] for i in range(len(hg_data.children))]
+        s += group_str(hg_data.name, names, 0, np=np) + "\n"
+        s += gen_string(hg_data.children)
+    else:
+        names = [[hg_data.children[i].name, hg_data.children[i].name] for i in range(len(hg_data.children))]
+        s += group_str(hg_data.name, names, 0, np=np) + "\n"
+        for child in hg_data.children:
+            s += rec_gen_string(child, np=np)
+    return s + "\n"
+
+
+def multi_rec_gen_string(hg_data, np=False):
+    s = ""
+    if not hg_data.last:
+        for child in hg_data.children:
+            s += "# ---New High Level Group---\n\n"
+            s += "import openmdao.api as om\n"
+            if np:
+                s += "import numpy as np\n"
+            s += "\n"
+            s += rec_gen_string(child, np=np)
+            s += "# ---End of High Level Group---\n"
+    else:
+        s += gen_string(hg_data.children, np=np, imports=True)
     return s
 
 
@@ -199,13 +221,17 @@ TEXT2 = "\n" \
         "### HG2\n" \
         "## G2\n" \
         "# C2\n" \
+        "y = z+1\n" \
+        "#### HHG2\n" \
+        "### HG3\n" \
+        "## G3\n" \
+        "# C1\n" \
         "y = x+1\n"
 
 
 def main():
-    # print(gen_string(total_parse(TEXT), True))
-    print(recursive_parse(TEXT2))
     # print(aggregate_result(recursive_parse(TEXT2)))
+    print(multi_rec_gen_string(recursive_parse(TEXT2),np=True))
 
 
 if __name__ == '__main__':

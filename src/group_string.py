@@ -1,8 +1,9 @@
 from textwrap import indent
 
 
-def group_str(g_name, subsystems, init, np=False):
+def group_str(g_name, subsystems, init, np=False, imports=False):
     """
+    :param imports: boolean to specify if imports are required
     :param np: boolean to specify if the user wants to import numpy
     :param g_name: group name
     :param subsystems: list of the components that are to be added to the group
@@ -11,10 +12,12 @@ def group_str(g_name, subsystems, init, np=False):
     :return: a string containing the code of an om.Group
     """
     s = ""
-    s += "import openmdao.api as om\n"
-    if np:
-        s += "import numpy as np\n"
-    s += "\n\nclass {}(om.Group):\n\n".format(g_name)
+    if imports:
+        s += "import openmdao.api as om\n"
+        if np:
+            s += "import numpy as np\n"
+        s += "\n\n"
+    s += "class {}(om.Group):\n\n".format(g_name)
     if init != 0:
         s += "\tdef initialize(self):\n\n"
         s += indent(init, prefix="\t\t")
