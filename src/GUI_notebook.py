@@ -5,6 +5,7 @@ import global_string_gen as gen_str
 from global_filegen import new_generate_file
 from parse_values import parse_values
 from delete import delete_var
+import parse_pack as pp
 import numpy as np
 from IPython.display import display, Markdown
 
@@ -14,6 +15,7 @@ IN = []
 D_VALUES = {}
 DELETED_VAR = []
 GEN_OR_PRINT = False
+PACK = []
 
 
 def init(in_):
@@ -43,6 +45,9 @@ def init(in_):
     analyse_but = v.Btn(children=['Analyse'], color='blue lighten-1')
     analyse_but.on_event('click', analyse_click)
 
+    global derivative_check
+    derivative_check = v.Checkbox(label='Analytic derivatives', v_model=True)
+
     global print_but
     print_but = v.Btn(children=['Print code'], color='orange lighten-2')
     print_but.on_event('click', print_click)
@@ -51,8 +56,16 @@ def init(in_):
     gen_but = v.Btn(children=['Generate file'], color="green lighten-2")
     gen_but.on_event('click', gen_click)
 
-    global numpy_check
-    numpy_check = v.Checkbox(label="import numpy", v_model=True)
+    global pack_area
+    pack_area = v.Textarea(
+        v_model='numpy as np',
+        label='Packages to import',
+        clearable=True,
+        rounded=True,
+        auto_grow=True,
+        row=15,
+        background_color="blue lighten-4"
+    )
 
     global function
     function = v.Textarea(
@@ -77,7 +90,7 @@ def init(in_):
     hb.layout.width = '90%'
 
     global vb
-    vb = widgets.Box(children=[hb, function, analyse_but])
+    vb = widgets.Box(children=[hb, function, pack_area, analyse_but])
     vb.layout.display = 'flex'
     vb.layout.flex_flow = 'column'
     vb.layout.align_items = 'stretch'
@@ -108,7 +121,7 @@ def copy_click(widget, event, data):
 
 
 def inner_analysis_in(c, var_in, i, group_cells, del_but):
-    group_cells.append([var_in[0], []])
+    group_cells.append([var_in.symbol, []])
 
     del_but += [v.Btn(children=["Delete"], color="blue lighten-2")]
 
@@ -127,19 +140,18 @@ def inner_analysis_in(c, var_in, i, group_cells, del_but):
 
     ipysheet.cell(i, 0, c.group, background_color='#EEEEEE', read_only=True)
     ipysheet.cell(i, 1, c.name, background_color='#EEEEEE', read_only=True)
-    group_cells[-1][1] += [ipysheet.cell(i, 2, var_in[0])]
-    group_cells[-1][1] += [ipysheet.cell(i, 3, var_in[1])]
+    group_cells[-1][1] += [ipysheet.cell(i, 2, var_in.symbol)]
+    group_cells[-1][1] += [ipysheet.cell(i, 3, var_in.name)]
     ipysheet.cell(i, 4, 'input', background_color='#8EFF9B', read_only=True)
-    group_cells[-1][1] += [ipysheet.cell(i, 5, 'None')]
-    group_cells[-1][1] += [ipysheet.cell(i, 6, 'np.nan')]
+    group_cells[-1][1] += [ipysheet.cell(i, 5, var_in.unit)]
+    group_cells[-1][1] += [ipysheet.cell(i, 6, var_in.val)]
     ipysheet.cell(i, 7, del_but[i])
-    if var_in[0] in D_VALUES:
-        ipysheet.cell(i, 6, D_VALUES[var_in[0]])
+    if var_in.symbol in D_VALUES:
+        ipysheet.cell(i, 6, D_VALUES[var_in.symbol])
 
 
-def inner_analysis_out(c, j, i, group_cells, del_but):
-    var_out = c.var_out[j]
-    group_cells.append([var_out[0], []])
+def inner_analysis_out(c, var_out, i, group_cells, del_but):
+    group_cells.append([var_out.symbol, []])
 
     del_but += [v.Btn(children=["Delete"], color="blue lighten-2")]
 
@@ -158,10 +170,10 @@ def inner_analysis_out(c, j, i, group_cells, del_but):
 
     ipysheet.cell(i, 0, c.group, background_color='#EEEEEE', read_only=True)
     ipysheet.cell(i, 1, c.name, background_color='#EEEEEE', read_only=True)
-    group_cells[-1][1] += [ipysheet.cell(i, 2, var_out[0])]
-    group_cells[-1][1] += [ipysheet.cell(i, 3, var_out[1])]
+    group_cells[-1][1] += [ipysheet.cell(i, 2, var_out.symbol)]
+    group_cells[-1][1] += [ipysheet.cell(i, 3, var_out.name)]
     ipysheet.cell(i, 4, 'output', background_color='#FFB48E', read_only=True)
-    group_cells[-1][1] += [ipysheet.cell(i, 5, c.units_o[j])]
+    group_cells[-1][1] += [ipysheet.cell(i, 5, var_out.unit)]
     group_cells[-1][1] += [ipysheet.cell(i, 6, '', background_color='#EEEEEE', read_only=True)]
     ipysheet.cell(i, 7, del_but[i])
 
@@ -171,8 +183,11 @@ def analyse_click(widget, event, data):
     analyse_but.loading = True
     analyse_but.disabled = True
 
+    global PACK
+    PACK = pp.parse_pack(pack_area.v_model)
+
     in_str = function.v_model
-    hg_data = gen_str.recursive_parse(in_str)
+    hg_data = gen_str.recursive_parse(in_str, PACK)
     result = gen_str.aggregate_result(hg_data)
     n = 0
     for g in result:
@@ -193,8 +208,8 @@ def analyse_click(widget, event, data):
             for var_in in c.var_in:
                 inner_analysis_in(c, var_in, i, group_cells, del_but)
                 i += 1
-            for j in range(len(c.var_out)):
-                inner_analysis_out(c, j, i, group_cells, del_but)
+            for var_out in c.var_out:
+                inner_analysis_out(c, var_out, i, group_cells, del_but)
                 i += 1
 
             for n in range(len(group_cells)):
@@ -206,8 +221,9 @@ def analyse_click(widget, event, data):
 
     analyse_but.loading = False
     analyse_but.children = ['Analysis done']
-    function.background_color = "#C0C0C0"
-    vb.children = (list(vb.children) + [sheet, numpy_check, print_but, gen_but])
+    function.background_color = "#D9D9D9"
+    pack_area.background_color = "#D9D9D9"
+    vb.children = (list(vb.children) + [sheet, derivative_check, print_but, gen_but])
 
     global RESULT
     RESULT = result
@@ -238,27 +254,25 @@ def print_click(widget, event, data):
 
     global GEN_OR_PRINT
 
+    global PACK
+
     if not GEN_OR_PRINT:
         sheet.read_only = True
         # Modifying result to take into account changes made to the sheet
         i = 0
         for g in result:
             for c in g[1]:
-                j = 0
                 for var_in in c.var_in:
-                    var_in[0] = arr[i, 2]
-                    var_in[1] = arr[i, 3]
-                    c.units_i[j][0] = arr[i, 5]
-                    c.units_i[j][1] = arr[i, 6]
+                    var_in.symbol = arr[i, 2]
+                    var_in.name = arr[i, 3]
+                    var_in.unit = arr[i, 5]
+                    var_in.val = arr[i, 6]
                     i += 1
-                    j += 1
-                k = 0
                 for var_out in c.var_out:
-                    var_out[0] = arr[i, 2]
-                    var_out[1] = arr[i, 3]
-                    c.units_o[k] = arr[i, 5]
+                    var_out.symbol = arr[i, 2]
+                    var_out.name = arr[i, 3]
+                    var_out.unit = arr[i, 5]
                     i += 1
-                    k += 1
 
         # Delete deleted variables
         for index in deleted_var:
@@ -269,7 +283,8 @@ def print_click(widget, event, data):
     print_but.loading = False
     print_but.children = ['Code printed']
 
-    s = gen_str.multi_rec_gen_string(hg_data, numpy_check.v_model)
+    s = gen_str.multi_rec_gen_string(hg_data, PACK, derivative_check.v_model)
+    # noinspection PyTypeChecker
     display(Markdown("```python\n" + s + "\n```"))
 
 
@@ -295,27 +310,25 @@ def gen_click(widget, event, data):
 
     global GEN_OR_PRINT
 
+    global PACK
+
     if not GEN_OR_PRINT:
         sheet.read_only = True
         # Modifying result to take into account changes made to the sheet
         i = 0
         for g in result:
             for c in g[1]:
-                j = 0
                 for var_in in c.var_in:
-                    var_in[0] = arr[i, 2]
-                    var_in[1] = arr[i, 3]
-                    c.units_i[j][0] = arr[i, 5]
-                    c.units_i[j][1] = arr[i, 6]
+                    var_in.symbol = arr[i, 2]
+                    var_in.name = arr[i, 3]
+                    var_in.unit = arr[i, 5]
+                    var_in.val = arr[i, 6]
                     i += 1
-                    j += 1
-                k = 0
                 for var_out in c.var_out:
-                    var_out[0] = arr[i, 2]
-                    var_out[1] = arr[i, 3]
-                    c.units_o[k] = arr[i, 5]
+                    var_out.symbol = arr[i, 2]
+                    var_out.name = arr[i, 3]
+                    var_out.unit = arr[i, 5]
                     i += 1
-                    k += 1
 
         # Delete deleted variables
         for index in deleted_var:
@@ -326,7 +339,7 @@ def gen_click(widget, event, data):
     gen_but.loading = False
     gen_but.children = ['File generated ']
 
-    new_generate_file(hg_data, numpy_check.v_model)
+    new_generate_file(hg_data, PACK, derivative_check.v_model)
 
 
 copy_but = v.Btn()
@@ -337,11 +350,13 @@ copy_field_2 = widgets.Text()
 
 analyse_but = v.Btn()
 
+derivative_check = v.Checkbox()
+
 print_but = v.Btn()
 
 gen_but = v.Btn()
 
-numpy_check = v.Checkbox()
+pack_area = v.Textarea()
 
 function = v.Textarea()
 

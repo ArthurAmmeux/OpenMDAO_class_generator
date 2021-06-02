@@ -1,10 +1,11 @@
 from textwrap import indent
+import parse_pack as pp
 
 
-def group_str(g_name, subsystems, init, np=False, imports=False):
+def group_str(g_name, subsystems, init, pack, imports=False):
     """
     :param imports: boolean to specify if imports are required
-    :param np: boolean to specify if the user wants to import numpy
+    :param pack: list of packages that the user wants to imports (instances of the Pack class)
     :param g_name: group name
     :param subsystems: list of the components that are to be added to the group
     (component name, class name, package name)
@@ -14,8 +15,8 @@ def group_str(g_name, subsystems, init, np=False, imports=False):
     s = ""
     if imports:
         s += "import openmdao.api as om\n"
-        if np:
-            s += "import numpy as np\n"
+        if len(pack) > 0:
+            s += pp.string_pack(pack)
         s += "\n\n"
     s += "class {}(om.Group):\n\n".format(g_name)
     if init != 0:

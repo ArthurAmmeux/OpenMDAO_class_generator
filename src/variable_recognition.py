@@ -17,6 +17,20 @@ class Variable:
         self.unit = unit
         self.val = val
         self.param = []
+        self.const = []
+        self.equation = ""
+
+    def __str__(self):
+        param = "\n"
+        for p in self.param:
+            param += str(p) + "\n"
+        return "symbol: " + self.symbol + " name: " + self.name + " param: " + param + "equation: " + self.equation
+
+    def add_param(self, param):
+        self.param.append(param)
+
+    def add_const(self, const):
+        self.const.append(const)
 
 
 def string_to_list(str):
@@ -54,6 +68,18 @@ def does_not_contain(e, sym):
     return True
 
 
+def not_var(x, var_list):
+    """
+    :param x: string to test
+    :param var_list: list of variables
+    :return: returns True if x is not a symbol of one of the variables in var_list
+    """
+    for var in var_list:
+        if x == var.symbol:
+            return False
+    return True
+
+
 def is_not_in(e, lis):
     """
     :param e: potential element of lis
@@ -66,49 +92,87 @@ def is_not_in(e, lis):
     return True
 
 
-def check_pack(x):
+def check_pack(x, pack):
     """
+    :param pack: list of packages that the user wants to import (instances of Pack class)
     :param x: potential variable to be tested
     :return: checks if the variable is not a constant from a package
     """
-    for pack in PACKAGES:
-        l = len(pack)
-        if len(x) >= l:
-            if x[0:l] == pack:
-                return False
+    packages = []
+    if len(pack) > 0:
+        for p in pack:
+            if p.short:
+                packages.append(p.nick + ".")
+            else:
+                packages.append(p.name + ".")
+
+        for p in packages:
+            l = len(p)
+            if len(x) >= l:
+                if x[0:l] == p:
+                    return False
     return True
 
 
-def add_var_in(x, var_in, var_out):
+def add_var_in(x, var_in, var_out, pack, add_p=False):
     """
+    :param add_p: boolean to know if the variable should be added as a parameter
+    :param pack: list of packages that the user wants to import (instances of the Pack class)
     :param x: potential variable to add
     :param var_in: list of input variables already added
     :param var_out: list of output variables already added
     :return: adds the variable to var_in if the conditions are verified and returns True if the variable has been added
+    also returns the variable added if a variable was added
     """
-    if is_not_in(x, KEYWORDS) and is_not_in(x, var_in) and is_not_in(x, var_out) and check_pack(x):
-        var = Variable(symbol=x)
-        var_in.append(x)
-        return True
-    return False
+    if is_not_in(x, KEYWORDS):
+        if check_pack(x, pack):
+            if not_var(x, var_in) and not_var(x, var_out):
+                var = Variable(symbol=x)
+                if add_p:
+                    var_out[-1].add_param(var)
+                var_in.append(var)
+                return [True, var]
+            else:
+                last_out = var_out[-1]
+                for v_in in var_in:
+                    if x == v_in.symbol:
+                        for param in last_out.param:
+                            if x == param.symbol:
+                                return [False, None]
+                        var_out[-1].add_param(v_in)
+                        return [False, v_in]
+                for v_out in var_out:
+                    if x == v_out.symbol:
+                        for param in last_out.param:
+                            if x == param.symbol:
+                                return [False, None]
+                        var_out[-1].add_param(v_out)
+                        return [False, v_out]
+        else:
+            if add_p:
+                var_out[-1].add_const(x)
+    return [False, None]
 
 
-def add_var_out(x, var_in, var_out):
+def add_var_out(x, var_in, var_out, pack):
     """
+    :param pack: list of packages that the user wants to import (instances of the Pack class)
     :param x: potential variable to add
     :param var_in: list of input variables already added
     :param var_out: list of output variables already added
     :return: adds the variable to var_out if the conditions are verified and returns True if the variable has been added
+    also returns the variable added if a variable was added
     """
-    if is_not_in(x, KEYWORDS) and is_not_in(x, var_in) and is_not_in(x, var_out) and check_pack(x):
-        var = Variable(symbol=x)
-        var_out.append(x)
-        return True
-    return False
+    if is_not_in(x, KEYWORDS) and not_var(x, var_in) and not_var(x, var_out) and check_pack(x, pack):
+        var = Variable(symbol=x, val='')
+        var_out.append(var)
+        return [True, var]
+    return [False, 'None']
 
 
-def handle_function(x, var_in, var_out):
+def handle_function(x, var_in, var_out, pack):
     """
+    :param pack: list of packages that the user wants to import (instances of the Pack class)
     :param x: string with functions in which to find variables
     :param var_in: input variables already found
     :param var_out: output variables already found
@@ -117,8 +181,8 @@ def handle_function(x, var_in, var_out):
     if x[0] == '(':
         x = x[1:]
         if len(x) > 1 and x[-1] == 'e':
-            handle_exponent(x, var_in, var_out)
-        add_var_in(x, var_in, var_out)
+            handle_exponent(x, var_in, var_out, pack)
+        add_var_in(x, var_in, var_out, pack, True)
 
     if does_not_contain(x, PARENTHESES):
         letters = string_to_list(LETTERS)
@@ -126,19 +190,20 @@ def handle_function(x, var_in, var_out):
         for y in p:
             if contains(y, letters):
                 if len(x) > 1 and x[-1] == 'e':
-                    handle_exponent(x, var_in, var_out)
-                elif is_not_in(x, var_in) and is_not_in(x, var_out):
-                    add_var_in(x, var_in, var_out)
+                    handle_exponent(x, var_in, var_out, pack)
+                else:
+                    add_var_in(x, var_in, var_out, pack, True)
     else:
         f = re.split(r'[(]', x, 1)
         if contains('', f):
             f.remove('')
         if len(f) == 2:
-            handle_function(f[1], var_in, var_out)
+            handle_function(f[1], var_in, var_out, pack)
 
 
-def handle_exponent(x, var_in, var_out):
+def handle_exponent(x, var_in, var_out, pack):
     """
+    :param pack: list of packages that the user wants to import (instances of the Pack class)
     :param x: string with potential exponent
     :param var_in: input variables already found
     :param var_out: output variables already found
@@ -146,11 +211,12 @@ def handle_exponent(x, var_in, var_out):
     """
     y = x[:-1]
     if contains(y, LETTERS) or does_not_contain(y, DIGITS):
-        add_var_in(x, var_in, var_out)
+        add_var_in(x, var_in, var_out, pack, True)
 
 
-def get_variables(equation):
+def get_variables(equation, pack):
     """
+    :param pack: list of packages that the user wants to import (instances of the Pack class)
     :param equation: string of equations written in python syntax potentially with functions
     :return: input and output variables found in equation + default names which are the same as the original
     """
@@ -158,9 +224,7 @@ def get_variables(equation):
     var_in = []
     var_out = []
     units_out = []
-    units_o = []
     lines = equation.splitlines()
-    groups = []
     for i in range(len(lines)):
         spt = re.split(r'[#[]', lines[i])
         if len(spt) >= 2:
@@ -170,41 +234,45 @@ def get_variables(equation):
             else:
                 units_out.append([i, ''])
             lines[i] = spt[0]
+    added = False
     for i in range(len(lines)):
-
         first = True
         if '=' not in lines[i]:
             first = False
+        else:
+            added = False
         groups = re.split(RE_SYMBOLS, lines[i])
         if '' in groups:
             groups.remove('')
         if not is_not_in(groups[0], KEYWORDS):
             first = False
+            added = False
+        if added:
+            var_out[-1].equation += lines[i]
 
         for x in groups:
             if does_not_contain(x, PARENTHESES):
                 if contains(x, letters):
                     if first:
-                        added = add_var_out(x, var_in, var_out)
+                        [added, var] = add_var_out(x, var_in, var_out, pack)
                         if added:
                             u_out = 'None'
                             for u in units_out:
                                 if u[0] == i:
                                     u_out = u[1]
-                            units_o.append(u_out)
+                            var.unit = u_out
+                            var.equation = lines[i].split("=")[1]
                     else:
                         if len(x) > 1 and x[-1] == 'e':
-                            handle_exponent(x, var_in, var_out)
+                            handle_exponent(x, var_in, var_out, pack)
                         else:
-                            add_var_in(x, var_in, var_out)
+                            add_var_in(x, var_in, var_out, pack, True)
             else:
                 if contains(x, letters):
-                    handle_function(x, var_in, var_out)
+                    handle_function(x, var_in, var_out, pack)
             first = False
 
-    var_in_ = [[x, x + "_name"] for x in var_in]
-    var_out_ = [[x, x + "_name"] for x in var_out]
-    return var_in_, var_out_, units_o
+    return var_in, var_out
 
 
 def format_line(line):
@@ -237,11 +305,11 @@ def edit_function(inputs, outputs, function):
         function_ += line + "\n"
 
     for i in range(len(inputs)):
-        prefix += "{} = inputs['{}']\n".format(inputs[i][0], inputs[i][1])
+        prefix += "{} = inputs['{}']\n".format(inputs[i].symbol, inputs[i].name)
     prefix += "\n"
 
     for i in range(len(outputs)):
-        suffix += "outputs['{}'] = {}\n".format(outputs[i][1], outputs[i][0])
+        suffix += "outputs['{}'] = {}\n".format(outputs[i].name, outputs[i].symbol)
 
     return prefix + function_ + suffix
 

@@ -1,13 +1,12 @@
 from textwrap import indent
+import derivative as d
 
 
-def component_str(c_name, inputs, outputs, units_i, units_o, comp_f):
+def component_str(c_name, inputs, outputs, comp_f):
     """
     :param c_name: component name
     :param inputs: list of input variables "renamed"
     :param outputs: list of output variables "renamed"
-    :param units_o: list of units of outputs
-    :param units_i: list of units of inputs
     :param comp_f: edited computation function
     :return: a string containing the code of an om.Component
     """
@@ -15,16 +14,65 @@ def component_str(c_name, inputs, outputs, units_i, units_o, comp_f):
     s += "class " + c_name + "(om.ExplicitComponent):\n\n"
     s += "\tdef setup(self):\n"
     for i in range(0, len(inputs)):
-        if units_i[i][0] == 'None':
-            s += "\t\tself.add_input('{}', val={})\n".format(inputs[i][1], units_i[i][1])
+        if inputs[i].unit == 'None':
+            s += "\t\tself.add_input('{}', val={})\n".format(inputs[i].name, inputs[i].val)
         else:
-            s += "\t\tself.add_input('{}', val={}, units='{}')\n".format(inputs[i][1], units_i[i][1], units_i[i][0])
+            s += "\t\tself.add_input('{}', val={}, units='{}')\n".format(inputs[i].name, inputs[i].val, inputs[i].unit)
     for i in range(0, len(outputs)):
-        if units_o[i] == 'None':
-            s += "\t\tself.add_output('{}')\n".format(outputs[i][1])
+        if outputs[i].unit == 'None':
+            s += "\t\tself.add_output('{}')\n".format(outputs[i].name)
         else:
-            s += "\t\tself.add_output('{}', units='{}')\n".format(outputs[i][1], units_o[i])
+            s += "\t\tself.add_output('{}', units='{}')\n".format(outputs[i].name, outputs[i].unit)
     s += "\n\tdef setup_partials(self):\n\t\tself.declare_partials('*', '*', method='fd')\n\n"
     s += "\tdef compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):\n"
     s += "\n" + indent(comp_f, prefix="\t\t") + "\n"
+    return s
+
+
+def component_str_derivative(c_name, inputs, outputs, comp_f, pack):
+    """
+        :param c_name: component name
+        :param inputs: list of input variables "renamed"
+        :param outputs: list of output variables "renamed"
+        :param comp_f: edited computation function
+        :param pack: list of packages that the user wants to import (instances of the Pack class)
+        :return: a string containing the code of an om.Component
+    """
+    s = ""
+    s += "class " + c_name + "(om.ExplicitComponent):\n\n"
+    s += "\tdef setup(self):\n"
+    for i in range(0, len(inputs)):
+        if inputs[i].unit == 'None':
+            s += "\t\tself.add_input('{}', val={})\n".format(inputs[i].name, inputs[i].val)
+        else:
+            s += "\t\tself.add_input('{}', val={}, units='{}')\n".format(inputs[i].name, inputs[i].val, inputs[i].unit)
+    for i in range(0, len(outputs)):
+        if outputs[i].unit == 'None':
+            s += "\t\tself.add_output('{}')\n".format(outputs[i].name)
+        else:
+            s += "\t\tself.add_output('{}', units='{}')\n".format(outputs[i].name, outputs[i].unit)
+    s += "\n\tdef setup_partials(self):\n"
+    for var_out in outputs:
+        if len(var_out.param) > 0:
+            if len(var_out.param) == 1:
+                param_name = "'{}'".format(var_out.param[0].name)
+            else:
+                param_name = "["
+                for p in var_out.param:
+                    param_name += "'{}', ".format(p.name)
+                param_name = param_name[:-2]
+                param_name += "]"
+            s += "\t\tself.declare_partials('{}', {})\n".format(var_out.name, param_name)
+    s += "\n\tdef compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):\n"
+    s += "\n" + indent(comp_f, prefix="\t\t") + "\n"
+    s += '\n\tdef compute_partials(self, inputs, J):\n\n'
+    for i in range(len(inputs)):
+        s += "\t\t{} = inputs['{}']\n".format(inputs[i].symbol, inputs[i].name)
+    s += "\n"
+    for out in outputs:
+        der = d.get_derivatives(out, pack)
+        for j in range(len(out.param)):
+            s += "\t\tJ['{}','{}'] = ".format(out.name, out.param[j].name) + der[j] + "\n"
+        s += "\n"
+
     return s

@@ -1,4 +1,5 @@
 import variable_recognition as vr
+import parse_pack as pp
 
 TEXT = "x = y3**2.5+4e-10 + np.exp + mat.exp + math.exp + numpy.exp #[m]\n" \
        "b = Dext/(Dalpha*1.0e-1 + 1) #[kg]\n" \
@@ -9,24 +10,28 @@ TEXT = "x = y3**2.5+4e-10 + np.exp + mat.exp + math.exp + numpy.exp #[m]\n" \
 
 TEST = "ratio_x025 = x0_25 / fus_length\n" \
        "k_h = 0.01222 - 7.40541e-4 * ratio_x025 * 100 + 2.1956e-5 * (ratio_x025 * 100) ** 2"
+PACK = "numpy as np, math as mat"
 
 
 def main():
-    inp, out, units = vr.get_variables(TEXT)
+
+    inp, out = vr.get_variables(TEXT, pp.parse_pack(PACK))
     inputs = []
     outputs = []
     print("Inputs detected:")
-    print(inp)
+    print([var_in.symbol for var_in in inp])
     print("Outputs detected:")
-    print(out)
+    print([var_out.symbol for var_out in out])
     print("Units detected:")
-    print(units)
+    print([var_out.unit for var_out in out])
+    print("First output:")
+    print(out[0])
     for x in inp:
-        in_name = input("input name for {}:".format(x[0]))
-        inputs.append([x, in_name])
+        x.name = input("input name for {}:".format(x.symbol))
+        inputs.append(x)
     for x in out:
-        out_name = input("output name for {}:".format(x[0]))
-        outputs.append([x, out_name])
+        x.name = input("output name for {}:".format(x.symbol))
+        outputs.append(x)
     text = TEXT
     print("--edited function--")
     print(vr.edit_function(inputs, outputs, text))
