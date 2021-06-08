@@ -1,7 +1,7 @@
 import re
 
 RE_SYMBOLS = r"[-=+*/%><)\s\t]+"
-KEYWORDS = [":", "if", "else", "elif", "True", "False", "np.pi"]
+KEYWORDS = [":", "if", "else", "elif", "if:", "else:", "elif:", "True", "False", "True:", "False:"]
 PARENTHESES = ["("]
 DIGITS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
 LETTERS = "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMONPQRSTUVWXYZ"
@@ -9,7 +9,7 @@ PACKAGES = ["numpy.", "np.", "mat.", "math."]
 
 
 class Variable:
-    def __init__(self, symbol='Default', name='Default_name', unit='None', val='np.nan'):
+    def __init__(self, symbol='Default', name='Default_name', unit='None', val='np.nan', output=False):
         self.symbol = symbol
         self.name = name
         if symbol != 'Default' and name == 'Default_name':
@@ -17,8 +17,9 @@ class Variable:
         self.unit = unit
         self.val = val
         self.param = []
-        self.const = []
         self.equation = ""
+        self.output = output
+        self.deleted = False
 
     def __str__(self):
         param = "\n"
@@ -29,8 +30,8 @@ class Variable:
     def add_param(self, param):
         self.param.append(param)
 
-    def add_const(self, const):
-        self.const.append(const)
+    def delete(self):
+        self.deleted = True
 
 
 def string_to_list(str):
@@ -124,15 +125,16 @@ def add_var_in(x, var_in, var_out, pack, add_p=False):
     :return: adds the variable to var_in if the conditions are verified and returns True if the variable has been added
     also returns the variable added if a variable was added
     """
+    out_added = len(var_out) > 0
     if is_not_in(x, KEYWORDS):
         if check_pack(x, pack):
             if not_var(x, var_in) and not_var(x, var_out):
-                var = Variable(symbol=x)
-                if add_p:
+                var = Variable(symbol=x, output=False)
+                if add_p and out_added:
                     var_out[-1].add_param(var)
                 var_in.append(var)
                 return [True, var]
-            else:
+            elif out_added:
                 last_out = var_out[-1]
                 for v_in in var_in:
                     if x == v_in.symbol:
@@ -148,9 +150,6 @@ def add_var_in(x, var_in, var_out, pack, add_p=False):
                                 return [False, None]
                         var_out[-1].add_param(v_out)
                         return [False, v_out]
-        else:
-            if add_p:
-                var_out[-1].add_const(x)
     return [False, None]
 
 
@@ -164,7 +163,7 @@ def add_var_out(x, var_in, var_out, pack):
     also returns the variable added if a variable was added
     """
     if is_not_in(x, KEYWORDS) and not_var(x, var_in) and not_var(x, var_out) and check_pack(x, pack):
-        var = Variable(symbol=x, val='')
+        var = Variable(symbol=x, val='', output=True)
         var_out.append(var)
         return [True, var]
     return [False, 'None']
@@ -312,4 +311,3 @@ def edit_function(inputs, outputs, function):
         suffix += "outputs['{}'] = {}\n".format(outputs[i].name, outputs[i].symbol)
 
     return prefix + function_ + suffix
-

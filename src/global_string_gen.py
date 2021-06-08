@@ -135,6 +135,7 @@ def gen_string(result, pack, d_check, imports=False):
     s = ""
     if result[0][0] == "None" and len(result) == 1:
         comp = result[0][1]
+        s += "import openmdao.api as om\n"
         if len(pack) > 0:
             s += pp.string_pack(pack)
         for i in range(len(comp)):

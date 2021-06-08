@@ -60,6 +60,7 @@ def init(in_):
     pack_area = v.Textarea(
         v_model='numpy as np',
         label='Packages to import',
+        placeholder='pack1 as pk1, pack2, ...',
         clearable=True,
         rounded=True,
         auto_grow=True,
@@ -70,6 +71,7 @@ def init(in_):
     global function
     function = v.Textarea(
         v_model='# Component1\ny = x + 1',
+        placeholder='Your equations here',
         label='Equations',
         clearable=True,
         rounded=True,

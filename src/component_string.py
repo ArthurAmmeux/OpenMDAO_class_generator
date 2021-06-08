@@ -25,7 +25,7 @@ def component_str(c_name, inputs, outputs, comp_f):
             s += "\t\tself.add_output('{}', units='{}')\n".format(outputs[i].name, outputs[i].unit)
     s += "\n\tdef setup_partials(self):\n\t\tself.declare_partials('*', '*', method='fd')\n\n"
     s += "\tdef compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):\n"
-    s += "\n" + indent(comp_f, prefix="\t\t") + "\n"
+    s += indent(comp_f, prefix="\t\t") + "\n"
     return s
 
 
@@ -53,26 +53,30 @@ def component_str_derivative(c_name, inputs, outputs, comp_f, pack):
             s += "\t\tself.add_output('{}', units='{}')\n".format(outputs[i].name, outputs[i].unit)
     s += "\n\tdef setup_partials(self):\n"
     for var_out in outputs:
-        if len(var_out.param) > 0:
-            if len(var_out.param) == 1:
+        for p in var_out.param:
+            if p.deleted and not p.output:
+                var_out.param.remove(p)
+        input_param = d.get_input_param(var_out, [])
+        if len(input_param) > 0:
+            if len(input_param) == 1:
                 param_name = "'{}'".format(var_out.param[0].name)
             else:
                 param_name = "["
-                for p in var_out.param:
+                for p in input_param:
                     param_name += "'{}', ".format(p.name)
                 param_name = param_name[:-2]
                 param_name += "]"
             s += "\t\tself.declare_partials('{}', {})\n".format(var_out.name, param_name)
     s += "\n\tdef compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):\n"
-    s += "\n" + indent(comp_f, prefix="\t\t") + "\n"
-    s += '\n\tdef compute_partials(self, inputs, J):\n\n'
+    s += indent(comp_f, prefix="\t\t") + "\n"
+    s += '\n\tdef compute_partials(self, inputs, J):\n'
     for i in range(len(inputs)):
         s += "\t\t{} = inputs['{}']\n".format(inputs[i].symbol, inputs[i].name)
     s += "\n"
     for out in outputs:
+        input_param = d.get_input_param(out, [])
         der = d.get_derivatives(out, pack)
-        for j in range(len(out.param)):
-            s += "\t\tJ['{}','{}'] = ".format(out.name, out.param[j].name) + der[j] + "\n"
+        for j in range(len(input_param)):
+            s += "\t\tJ['{}','{}'] = ".format(out.name, input_param[j].name) + der[j] + "\n"
         s += "\n"
-
     return s
