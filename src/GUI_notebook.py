@@ -1,9 +1,10 @@
 import ipywidgets as widgets
 import ipyvuetify as v
 import ipysheet
+import openmdao.api as om
 import global_string_gen as gen_str
 from global_filegen import new_generate_file
-from parse_values import parse_values
+from parse_values import parse_values, parse_imports, format_imports
 from delete import delete_var
 import parse_pack as pp
 import numpy as np
@@ -108,18 +109,25 @@ def copy_click(widget, event, data):
     n2 = int(copy_field_2.value) + 1
     copy = ""
     global D_VALUES
+    imports = []
     if 0 < n1 < n2 <= len(IN):
         for cell in IN[n1:n2]:
             if len(cell) >= 6:
                 if cell[0:6] != '# Init':
-                    if len(cell) >= 9:
-                        if cell[0:9] != '# Exclude':
-                            copy += cell + "\n\n"
+                    if len(cell) >= 8:
+                        if cell[0:8] != "# Import":
+                            if len(cell) >= 9:
+                                if cell[0:9] != '# Exclude':
+                                    copy += cell + "\n\n"
+                        else:
+                            imports += parse_imports(cell)
                 else:
                     parse_values(cell, D_VALUES)
             else:
                 copy += cell + "\n\n"
     function.v_model = copy
+    if len(imports) > 0:
+        pack_area.v_model = format_imports(imports)
 
 
 def inner_analysis_in(c, var_in, i, group_cells, del_but):
@@ -279,6 +287,9 @@ def print_click(widget, event, data):
         # Delete deleted variables
         for index in deleted_var:
             delete_var(result, index)
+
+    # prob = om.Problem()
+    # om.n2(prob)
 
     GEN_OR_PRINT = True
 
