@@ -6,10 +6,12 @@ from parse_pack import Pack
 def get_derivatives(var, pack):
     der = []
     ns = {}
+    var.equation = format_equation(var.equation, pack)
     for p in get_input_param(var, []):
         ns[p.symbol] = Symbol(p.symbol)
+        if p.output:
+            p.equation = format_equation(p.equation, pack)
     eq_str = parse_eq_rec(var)
-    eq_str = format_equation(eq_str, pack)
     try:
         eq = sympify(eq_str, locals=ns)
         for key in ns:
