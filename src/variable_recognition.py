@@ -4,7 +4,7 @@ RE_SYMBOLS = r"[-=+*/%><)\s\t]+"
 KEYWORDS = [":", "if", "else", "elif", "if:", "else:", "elif:", "True", "False", "True:", "False:"]
 PARENTHESES = ["("]
 DIGITS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
-LETTERS = "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMONPQRSTUVWXYZ"
+LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMONPQRSTUVWXYZ"
 PACKAGES = ["numpy.", "np.", "mat.", "math."]
 
 

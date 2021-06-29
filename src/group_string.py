@@ -25,5 +25,5 @@ def group_str(g_name, subsystems, init, pack, imports=False):
         s += "\n"
     s += "\tdef setup(self):\n"
     for i in range(len(subsystems)):
-        s += '\t\tself.add_subsystem("{}", {}, promotes=["*"])\n'.format(subsystems[i][0], subsystems[i][1])
+        s += '\t\tself.add_subsystem("{}", {}(), promotes=["*"])\n'.format(subsystems[i][0], subsystems[i][1])
     return s

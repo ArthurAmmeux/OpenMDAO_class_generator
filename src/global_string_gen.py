@@ -21,7 +21,7 @@ class CompData:
 
 class HGdata:
     """
-    a class to store data about higher groups
+    A class to store data about higher groups recursively
     """
     def __init__(self):
         self.name = "Default_name"
@@ -78,7 +78,7 @@ def total_parse(str, pack):
             comp_data.equation = c[1]
             list_of_components.append(comp_data)
 
-        result = [["None", list_of_components]]
+        result = [[None, list_of_components]]
 
     return result
 
@@ -130,10 +130,12 @@ def gen_string(result, pack, d_check, imports=False):
     :param pack: list of packages that the user wants to import (instances of the Pack class)
     :param result: a list of group names associated with their list_of_components containing CompData instances
     :param d_check: boolean to specify if derivatives are to be analytic
-    :return: a string with groups and their associated components as om.Groups and om.Components
+    :return: a string with groups and their associated components as om.Groups and om.Components and a list
+    of strings with an element being a component or highest level group
     """
     s = ""
-    if result[0][0] == "None" and len(result) == 1:
+    ls = []
+    if result[0][0] is None and len(result) == 1:
         comp = result[0][1]
         s += "import openmdao.api as om\n"
         if len(pack) > 0:
@@ -163,7 +165,8 @@ def gen_string(result, pack, d_check, imports=False):
                 else:
                     s += component_str(comp_data.name, inputs, outputs, comp_f)
             s += "\n"
-    return s
+            ls.append(s)
+    return [s, ls]
 
 
 def rec_gen_string(hg_data, pack, d_check):
@@ -177,7 +180,7 @@ def rec_gen_string(hg_data, pack, d_check):
     if hg_data.last:
         names = [[hg_data.children[i][0], hg_data.children[i][0]] for i in range(len(hg_data.children))]
         s += group_str(hg_data.name, names, 0, pack) + "\n"
-        s += gen_string(hg_data.children, pack, d_check)
+        s += gen_string(hg_data.children, pack, d_check)[0]
     else:
         names = [[hg_data.children[i].name, hg_data.children[i].name] for i in range(len(hg_data.children))]
         s += group_str(hg_data.name, names, 0, pack) + "\n"
@@ -194,6 +197,7 @@ def multi_rec_gen_string(hg_data, pack, d_check):
     :return: generated string (same function as the previous one but usable on multiple highest level groups)
     """
     s = ""
+    ls = []
     if not hg_data.last:
         for child in hg_data.children:
             s += "# ---New High Level Group---\n\n"
@@ -203,9 +207,12 @@ def multi_rec_gen_string(hg_data, pack, d_check):
             s += "\n"
             s += rec_gen_string(child, pack, d_check)
             s += "# ---End of High Level Group---\n"
+            ls.append(s)
     else:
-        s += gen_string(hg_data.children, pack, d_check, imports=True)
-    return s
+        gs = gen_string(hg_data.children, pack, d_check, imports=True)
+        s += gs[0]
+        ls = gs[1]
+    return s, ls
 
 
 TEXT = "\n" \

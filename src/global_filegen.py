@@ -2,6 +2,7 @@ from variable_recognition import edit_function
 from component_string import *
 import global_string_gen as gs
 import os
+import parse_pack as pp
 
 
 def open_file(f_name):
@@ -18,19 +19,20 @@ def open_file(f_name):
 
 def generate_file(result, pack, d_check):
     """
+    !!! still used !!!
     :param pack: a list of packages that the user wants to import (instances of the Pack class)
     :param result: a list of group names associated with their list_of_components containing CompData instances
     :param pack: list of packages that the user wants to import (instances of the Pack class)
     :param d_check: boolean to specify if derivatives are to be analytic
     :return: generates one file per group with python code
     """
-    if result[0][0] == "None" and len(result) == 1:
+    if result[0][0] is None and len(result) == 1:
         comp = result[0][1]
         f_name = comp[0].name
         f = open_file(f_name)
         f.write("import openmdao.api as om\n")
-        if pack:
-            f.write("import numpy as np\n")
+        if len(pack) > 0:
+            f.write(pp.string_pack(pack))
         f.write("\n\n")
         for i in range(len(comp)):
             comp_f = comp[i].equation
@@ -45,8 +47,8 @@ def generate_file(result, pack, d_check):
             f_name = result[i][0]
             f = open_file(f_name)
             f.write("import openmdao.api as om\n")
-            if pack:
-                f.write("import numpy as np\n")
+            if len(pack) > 0:
+                f.write(pp.string_pack(pack))
             f.write("\n\n")
             add_group(f, result[i][0], [[comp.name, comp.name]for comp in result[i][1]], 0)
             for comp_data in result[i][1]:
@@ -74,8 +76,8 @@ def new_generate_file(hg_data, pack, d_check):
             f_name = child.name
             f = open_file(f_name)
             f.write("import openmdao.api as om\n")
-            if pack:
-                f.write("import numpy as np\n")
+            if len(pack) > 0:
+                f.write(pp.string_pack(pack))
             f.write("\n\n")
             f.write(s)
             f.close()
@@ -94,9 +96,9 @@ def add_component(f, c_name, inputs, outputs, comp_f, pack, d_check):
     :return: writes in the target file the code for the selected component
     """
     if d_check:
-        f.write(component_str_derivative(c_name, inputs, outputs, comp_f, pack))
+        f.write(component_str_derivative(c_name, inputs, outputs, comp_f, pack) + "\n")
     else:
-        f.write(component_str(c_name, inputs, outputs, comp_f))
+        f.write(component_str(c_name, inputs, outputs, comp_f) + "\n")
 
 
 def add_group(f, g_name, subsystems, init):

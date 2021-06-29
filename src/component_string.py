@@ -69,7 +69,7 @@ def component_str_derivative(c_name, inputs, outputs, comp_f, pack):
             s += "\t\tself.declare_partials('{}', {})\n".format(var_out.name, param_name)
     s += "\n\tdef compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):\n"
     s += indent(comp_f, prefix="\t\t") + "\n"
-    s += '\n\tdef compute_partials(self, inputs, J):\n'
+    s += '\tdef compute_partials(self, inputs, J):\n'
     for i in range(len(inputs)):
         s += "\t\t{} = inputs['{}']\n".format(inputs[i].symbol, inputs[i].name)
     s += "\n"
@@ -77,6 +77,6 @@ def component_str_derivative(c_name, inputs, outputs, comp_f, pack):
         input_param = d.get_input_param(out, [])
         der = d.get_derivatives(out, pack)
         for j in range(len(input_param)):
-            s += "\t\tJ['{}','{}'] = ".format(out.name, input_param[j].name) + der[j] + "\n"
+            s += "\t\tJ['{}', '{}'] = ".format(out.name, input_param[j].name) + der[j] + "\n"
         s += "\n"
     return s

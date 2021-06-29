@@ -1,14 +1,14 @@
 import ipywidgets as widgets
 import ipyvuetify as v
 import ipysheet
-import openmdao.api as om
 import global_string_gen as gen_str
 from global_filegen import new_generate_file
 from parse_values import parse_values, parse_imports, format_imports
 from delete import delete_var
 import parse_pack as pp
-import numpy as np
 from IPython.display import display, Markdown
+import importlib
+import n2_execute
 
 HG_DATA = []
 RESULT = []
@@ -17,6 +17,32 @@ D_VALUES = {}
 DELETED_VAR = []
 GEN_OR_PRINT = False
 PACK = []
+S = ""
+LS = []
+
+copy_but = v.Btn()
+
+copy_field_1 = widgets.Text()
+
+copy_field_2 = widgets.Text()
+
+analyse_but = v.Btn()
+
+derivative_check = v.Checkbox()
+
+print_but = v.Btn()
+
+gen_but = v.Btn()
+
+n2_but = v.Btn()
+
+pack_area = v.Textarea()
+
+function = v.Textarea()
+
+hb = widgets.Box()
+
+vb = widgets.Box()
 
 
 def init(in_):
@@ -56,6 +82,11 @@ def init(in_):
     global gen_but
     gen_but = v.Btn(children=['Generate file'], color="green lighten-2")
     gen_but.on_event('click', gen_click)
+
+    global n2_but
+    n2_but = v.Btn(children=['Generate n2 diagram'], color="purple lighten-2")
+    n2_but.on_event('click', n2_click)
+    n2_but.disabled = True
 
     global pack_area
     pack_area = v.Textarea(
@@ -104,7 +135,7 @@ def init(in_):
 
 
 def copy_click(widget, event, data):
-    # Function called when the copy cells button is pressed
+    # Function called when the "copy cells" button is pressed
     n1 = int(copy_field_1.value)
     n2 = int(copy_field_2.value) + 1
     copy = ""
@@ -189,7 +220,7 @@ def inner_analysis_out(c, var_out, i, group_cells, del_but):
 
 
 def analyse_click(widget, event, data):
-    # Function called when the analyse button is pressed
+    # Function called when the "analyse" button is pressed
     analyse_but.loading = True
     analyse_but.disabled = True
 
@@ -243,13 +274,12 @@ def analyse_click(widget, event, data):
 
 
 def print_click(widget, event, data):
-    # Function called when the button 'print code' is pressed
+    # Function called when the button "print code" is pressed
 
     print_but.loading = True
     print_but.disabled = True
 
     sheet = ipysheet.current()
-    arr = np.array([])
     arr = ipysheet.to_array(sheet)
 
     global RESULT
@@ -265,6 +295,9 @@ def print_click(widget, event, data):
     global GEN_OR_PRINT
 
     global PACK
+
+    global S
+    global LS
 
     if not GEN_OR_PRINT:
         sheet.read_only = True
@@ -288,27 +321,28 @@ def print_click(widget, event, data):
         for index in deleted_var:
             delete_var(result, index)
 
-    # prob = om.Problem()
-    # om.n2(prob)
+        vb.children = (list(vb.children) + [n2_but])
+        S, LS = gen_str.multi_rec_gen_string(hg_data, PACK, derivative_check.v_model)
+        if not LS:
+            n2_but.children = ["cannot generate n2 diagram (groups only)"]
+        else:
+            n2_but.disabled = False
 
     GEN_OR_PRINT = True
+
+    # noinspection PyTypeChecker
+    display(Markdown("```python\n" + S + "\n```"))
 
     print_but.loading = False
     print_but.children = ['Code printed']
 
-    s = gen_str.multi_rec_gen_string(hg_data, PACK, derivative_check.v_model)
-    # noinspection PyTypeChecker
-    display(Markdown("```python\n" + s + "\n```"))
-
 
 def gen_click(widget, event, data):
-    # Function called when the button 'generate file' is pressed
-
+    # Function called when the button "generate file" is pressed
     gen_but.loading = True
     gen_but.disabled = True
 
     sheet = ipysheet.current()
-    arr = np.array([])
     arr = ipysheet.to_array(sheet)
 
     global RESULT
@@ -347,32 +381,31 @@ def gen_click(widget, event, data):
         for index in deleted_var:
             delete_var(result, index)
 
+        vb.children = (list(vb.children) + [n2_but])
+        global S
+        global LS
+        S, LS = gen_str.multi_rec_gen_string(hg_data, PACK, derivative_check.v_model)
+        if not LS:
+            n2_but.children = ["cannot generate n2 diagram (groups only)"]
+        else:
+            n2_but.disabled = False
+
     GEN_OR_PRINT = True
+
+    new_generate_file(hg_data, PACK, derivative_check.v_model)
 
     gen_but.loading = False
     gen_but.children = ['File generated ']
 
-    new_generate_file(hg_data, PACK, derivative_check.v_model)
 
-
-copy_but = v.Btn()
-
-copy_field_1 = widgets.Text()
-
-copy_field_2 = widgets.Text()
-
-analyse_but = v.Btn()
-
-derivative_check = v.Checkbox()
-
-print_but = v.Btn()
-
-gen_but = v.Btn()
-
-pack_area = v.Textarea()
-
-function = v.Textarea()
-
-hb = widgets.Box()
-
-vb = widgets.Box()
+def n2_click(widget, event, data):
+    # Function called when the button "generate n2 diagram" is pressed
+    n2_but.loading = True
+    import n2_globals
+    global LS
+    global HG_DATA
+    n2_globals.set_globals(LS, HG_DATA)
+    importlib.reload(n2_execute)
+    n2_but.loading = False
+    n2_but.disabled = True
+    n2_but.children = ["N2 diagram generated"]
