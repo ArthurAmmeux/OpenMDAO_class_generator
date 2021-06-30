@@ -2,6 +2,7 @@ from textwrap import indent
 import derivative as d
 import subprocess
 
+
 def component_str(c_name, inputs, outputs, comp_f):
     """
     :param c_name: component name
