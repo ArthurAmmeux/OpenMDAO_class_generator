@@ -33,4 +33,6 @@ the groups following in your text with the next lower level of hashtags will be 
 
 - Once you are done modifying the sheet, you can choose whether you want analytic derivatives or numeric derivatives by ticking the __checkbox__. Then you can press either the __Print code__ button which will print your code in a markdown style or the __Generate File__ button which will generate one file with all your components if you chose to write om.Component only or one file per highest level group if you have written multiple om.Group, all the files are generated in the current directory and their names is either the name of the first om.Component or the name of the om.Group
 
+- After you have clicked on either __Print code__ or __Generated File__, a new button __Generate n2 diagram__ will appear. It will be clickable only if your code contains groups. Once clicked, it will generate one n2 diagram for every highest level group.
+
 - If you want to use the program again, it is necessary to re-run the first cell of __Ipyvuetify GUI__
