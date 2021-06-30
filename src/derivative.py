@@ -1,22 +1,25 @@
 from sympy import *
-from variable_recognition import Variable
+from variable_recognition import Variable, Constant
 from parse_pack import Pack
 
 LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 
-def get_derivatives(var, pack):
+def get_derivatives(var, pack, const):
     der = []
     ns = {}
     var.equation = format_equation(var.equation, pack)
     for p in get_input_param(var, []):
         ns[p.symbol] = Symbol(p.symbol)
+    ns_0 = ns
+    for c in const:
+        ns_0[c.short] = Symbol(c.short)
     eq_str = parse_eq_rec(var, pack)
     try:
-        eq = sympify(eq_str, locals=ns)
+        eq = sympify(eq_str, locals=ns_0)
         for key in ns:
             derv = str(diff(eq, ns[key]))
-            der.append(format_derivative(derv))
+            der.append(format_derivative(derv, const))
     except SympifyError:
         for key in ns:
             der.append("# sympy could not parse the equation")
@@ -52,26 +55,69 @@ def format_equation(eq_str, pack):
     return eq_str
 
 
-def format_derivative(der):
-    f = {}
-    for i in range(len(der)):
-        if der[i] == "(":
-            func = ""
-            j = 1
-            while j <= i and der[i-j] in LETTERS:
-                func = der[i-j] + func
-                j += 1
-            if func != "":
-                if func not in f:
-                    f[func] = 1
-                else:
-                    f[func] += 1
-    for func in f:
-        der = der.replace(func, "np." + func, f[func])
-    return der
+def format_derivative(der, const):
+    der_list = []
+    index = 0
+    for i in range(1, len(der)):
+        if der[i-index] == "(" and i > index:
+            if der[i-index-1] in LETTERS:
+                func = der[i-index-1]
+                j = 2
+                while j <= i-index and der[i-index-j] in LETTERS:
+                    func = der[i-index-j] + func
+                    j += 1
+                der_list.append([der[:i-index], func])
+                der = der[i-index:]
+                index = i+1
+    der_fin = ""
+    for elt in der_list:
+        st = elt[0]
+        func = elt[1]
+        new_func = "np." + func
+        st = st[:-len(func)]
+        st += new_func
+        der_fin += st
+    der_fin += der
+
+    for c in const:
+        cs = c.short
+        if cs in der_fin:
+            der_c = der_fin
+            l = len(cs)
+            der_c_list = []
+            index = 0
+            for i in range(len(der_c)):
+                j = 0
+                while j <= i-index and der_c[i-index-j] == c.short[-j-1]:
+                    if j == l-1:
+                        beg = False
+                        if i-index-j == 0:
+                            beg = True
+                        elif der_c[i-index-j-1] not in LETTERS:
+                            beg = True
+                        end = False
+                        if i-index == len(der_c) - 1:
+                            end = True
+                        elif der_c[i-index+1] not in LETTERS:
+                            end = True
+                        if beg and end:
+                            der_c_list.append(der_c[:i - index + 1])
+                            der_c = der_c[i - index + 1:]
+                            index = i + 1
+                        break
+                    j += 1
+            der_fin = ""
+            for st in der_c_list:
+                st = st[:-l]
+                st += c.full
+                der_fin += st
+            der_fin += der_c
+
+    return der_fin
 
 
-DER = "1/(x+sin(y)"
+DER = "pi*pisinpicostanpi + pi /(x+(sin(y)*cos(x)) + pi"
+CONST = [Constant("np.pi")]
 
 p1 = Pack(name="numpy", short=True, nick="np")
 p2 = Pack(name="mat", short=False, nick="")
@@ -96,8 +142,9 @@ var4.equation = expr2
 
 
 def main():
-    print(get_derivatives(var1, packs))
-    print(format_derivative(DER))
+    print(get_derivatives(var1, packs, []))
+    print(format_derivative(DER, CONST))
+    # print(format_equation("np.cos(np.euler**x)", packs))
 
 
 if __name__ == "__main__":

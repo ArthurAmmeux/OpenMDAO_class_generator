@@ -1,6 +1,6 @@
 from textwrap import indent
 import derivative as d
-
+import subprocess
 
 def component_str(c_name, inputs, outputs, comp_f):
     """
@@ -26,17 +26,24 @@ def component_str(c_name, inputs, outputs, comp_f):
     s += "\n\tdef setup_partials(self):\n\t\tself.declare_partials('*', '*', method='fd')\n\n"
     s += "\tdef compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):\n"
     s += indent(comp_f, prefix="\t\t") + "\n"
+
+    try:
+        byt = subprocess.check_output("black --code " + '"' + s + '"')
+        s = byt.decode("unicode_escape")
+    except subprocess.CalledProcessError:
+        pass
     return s
 
 
-def component_str_derivative(c_name, inputs, outputs, comp_f, pack):
+def component_str_derivative(c_name, inputs, outputs, const, comp_f, pack):
     """
-        :param c_name: component name
-        :param inputs: list of input variables "renamed"
-        :param outputs: list of output variables "renamed"
-        :param comp_f: edited computation function
-        :param pack: list of packages that the user wants to import (instances of the Pack class)
-        :return: a string containing the code of an om.Component
+    :param c_name: component name
+    :param inputs: list of input variables "renamed"
+    :param outputs: list of output variables "renamed"
+    :param const: list of constants present in the component
+    :param comp_f: edited computation function
+    :param pack: list of packages that the user wants to import (instances of the Pack class)
+    :return: a string containing the code of an om.Component
     """
     s = ""
     s += "class " + c_name + "(om.ExplicitComponent):\n\n"
@@ -69,14 +76,20 @@ def component_str_derivative(c_name, inputs, outputs, comp_f, pack):
             s += "\t\tself.declare_partials('{}', {})\n".format(var_out.name, param_name)
     s += "\n\tdef compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):\n"
     s += indent(comp_f, prefix="\t\t") + "\n"
-    s += '\tdef compute_partials(self, inputs, J):\n'
+    s += '\tdef compute_partials(self, inputs, J, **kwargs):\n'
     for i in range(len(inputs)):
         s += "\t\t{} = inputs['{}']\n".format(inputs[i].symbol, inputs[i].name)
     s += "\n"
     for out in outputs:
         input_param = d.get_input_param(out, [])
-        der = d.get_derivatives(out, pack)
+        der = d.get_derivatives(out, pack, const)
         for j in range(len(input_param)):
             s += "\t\tJ['{}', '{}'] = ".format(out.name, input_param[j].name) + der[j] + "\n"
         s += "\n"
+
+    try:
+        byt = subprocess.check_output("black --code " + '"' + s + '"')
+        s = byt.decode("unicode_escape")
+    except subprocess.CalledProcessError:
+        pass
     return s

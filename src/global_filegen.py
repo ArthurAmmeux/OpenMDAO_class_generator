@@ -12,7 +12,7 @@ def open_file(f_name):
     """
     try:
         f = open("{}.py".format(f_name), "x")
-        return f
+        return f, f_name
     except IOError:
         return open_file(f_name + "(1)")
 
@@ -36,16 +36,16 @@ def generate_file(result, pack, d_check):
         f.write("\n\n")
         for i in range(len(comp)):
             comp_f = comp[i].equation
-            var_in, var_out = comp[i].var_in, comp[i].var_out
+            var_in, var_out, const = comp[i].var_in, comp[i].var_out, comp[i].constants
             comp_f = edit_function(var_in, var_out, comp_f)
             c_name = comp[i].name
-            add_component(f, c_name, var_in, var_out, comp_f, pack, d_check)
+            add_component(f, c_name, var_in, var_out, const, comp_f, pack, d_check)
         f.close()
         os.system("black " + f_name + ".py")
     else:
         for i in range(len(result)):
             f_name = result[i][0]
-            f = open_file(f_name)
+            f, f_name = open_file(f_name)
             f.write("import openmdao.api as om\n")
             if len(pack) > 0:
                 f.write(pp.string_pack(pack))
@@ -53,10 +53,10 @@ def generate_file(result, pack, d_check):
             add_group(f, result[i][0], [[comp.name, comp.name]for comp in result[i][1]], 0)
             for comp_data in result[i][1]:
                 comp_f = comp_data.equation
-                var_in, var_out = comp_data.var_in, comp_data.var_out
+                var_in, var_out, const = comp_data.var_in, comp_data.var_out, comp_data.constants
                 comp_f = edit_function(var_in, var_out, comp_f)
                 c_name = comp_data.name
-                add_component(f, c_name, var_in, var_out, comp_f, pack, d_check)
+                add_component(f, c_name, var_in, var_out, const, comp_f, pack, d_check)
             f.close()
             os.system("black " + f_name + ".py")
 
@@ -74,7 +74,7 @@ def new_generate_file(hg_data, pack, d_check):
         for child in hg_data.children:
             s = gs.rec_gen_string(child, pack, d_check)
             f_name = child.name
-            f = open_file(f_name)
+            f, f_name = open_file(f_name)
             f.write("import openmdao.api as om\n")
             if len(pack) > 0:
                 f.write(pp.string_pack(pack))
@@ -84,19 +84,20 @@ def new_generate_file(hg_data, pack, d_check):
             os.system("black " + f_name + ".py")
 
 
-def add_component(f, c_name, inputs, outputs, comp_f, pack, d_check):
+def add_component(f, c_name, inputs, outputs, const, comp_f, pack, d_check):
     """
     :param f: target file
     :param c_name: component name
     :param inputs: list of input variables and their associated names
     :param outputs: list of output variables and their associated names
+    :param const: list of constants in the component
     :param comp_f: edited computation function
     :param pack: list of packages that the user wants to import (instances of the Pack class)
     :param d_check: boolean to specify if derivatives are to be analytic
     :return: writes in the target file the code for the selected component
     """
     if d_check:
-        f.write(component_str_derivative(c_name, inputs, outputs, comp_f, pack) + "\n")
+        f.write(component_str_derivative(c_name, inputs, outputs, const, comp_f, pack) + "\n")
     else:
         f.write(component_str(c_name, inputs, outputs, comp_f) + "\n")
 

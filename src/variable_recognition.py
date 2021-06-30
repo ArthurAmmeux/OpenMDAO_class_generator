@@ -34,6 +34,15 @@ class Variable:
         self.deleted = True
 
 
+class Constant:
+    def __init__(self, symbol):
+        self.full = symbol
+        rev = symbol[::-1]
+        split_rev = rev.split(".", maxsplit=1)
+        self.short = split_rev[0][::-1]
+        self.pack = split_rev[1][::-1]
+
+
 def string_to_list(str):
     """
     :param str: input string
@@ -115,13 +124,30 @@ def check_pack(x, pack):
     return True
 
 
-def add_var_in(x, var_in, var_out, pack, add_p=False):
+def format_const(const):
+    """
+    :param const: list of constants with multiple occurrences of the same element
+    :return: a reformatted list without multiple occurrences of the same element
+    """
+    const_ = []
+    for c in const:
+        dif = True
+        for d in const_:
+            if c == d:
+                dif = False
+        if dif:
+            const_.append(c)
+    return const_
+
+
+def add_var_in(x, var_in, var_out, const, pack, add_p=False):
     """
     :param add_p: boolean to know if the variable should be added as a parameter
     :param pack: list of packages that the user wants to import (instances of the Pack class)
     :param x: potential variable to add
     :param var_in: list of input variables already added
     :param var_out: list of output variables already added
+    :param const: constants already found
     :return: adds the variable to var_in if the conditions are verified and returns True if the variable has been added
     also returns the variable added if a variable was added
     """
@@ -150,6 +176,8 @@ def add_var_in(x, var_in, var_out, pack, add_p=False):
                                 return [False, None]
                         var_out[-1].add_param(v_out)
                         return [False, v_out]
+        else:
+            const.append(Constant(x))
     return [False, None]
 
 
@@ -169,19 +197,20 @@ def add_var_out(x, var_in, var_out, pack):
     return [False, 'None']
 
 
-def handle_function(x, var_in, var_out, pack):
+def handle_function(x, var_in, var_out, const, pack):
     """
     :param pack: list of packages that the user wants to import (instances of the Pack class)
     :param x: string with functions in which to find variables
     :param var_in: input variables already found
     :param var_out: output variables already found
+    :param const: constants already found
     :return: adds the newly found variables to var_in
     """
     if x[0] == '(':
         x = x[1:]
         if len(x) > 1 and x[-1] == 'e':
-            handle_exponent(x, var_in, var_out, pack)
-        add_var_in(x, var_in, var_out, pack, True)
+            handle_exponent(x, var_in, var_out, const, pack)
+        add_var_in(x, var_in, var_out, const, pack, True)
 
     if does_not_contain(x, PARENTHESES):
         letters = string_to_list(LETTERS)
@@ -189,39 +218,42 @@ def handle_function(x, var_in, var_out, pack):
         for y in p:
             if contains(y, letters):
                 if len(x) > 1 and x[-1] == 'e':
-                    handle_exponent(x, var_in, var_out, pack)
+                    handle_exponent(x, var_in, var_out, const, pack)
                 else:
-                    add_var_in(x, var_in, var_out, pack, True)
+                    add_var_in(x, var_in, var_out, const, pack, True)
     else:
         f = re.split(r'[(]', x, 1)
         if contains('', f):
             f.remove('')
         if len(f) == 2:
-            handle_function(f[1], var_in, var_out, pack)
+            handle_function(f[1], var_in, var_out, const, pack)
 
 
-def handle_exponent(x, var_in, var_out, pack):
+def handle_exponent(x, var_in, var_out, const, pack):
     """
     :param pack: list of packages that the user wants to import (instances of the Pack class)
     :param x: string with potential exponent
     :param var_in: input variables already found
     :param var_out: output variables already found
+    :param const: constants already found
     :return: adds the newly found variables to var_in
     """
     y = x[:-1]
     if contains(y, LETTERS) or does_not_contain(y, DIGITS):
-        add_var_in(x, var_in, var_out, pack, True)
+        add_var_in(x, var_in, var_out, const, pack, True)
 
 
 def get_variables(equation, pack):
     """
     :param pack: list of packages that the user wants to import (instances of the Pack class)
     :param equation: string of equations written in python syntax potentially with functions
-    :return: input and output variables found in equation + default names which are the same as the original
+    :return: input and output variables found in equation + default names which are the same as the original as well
+    as the constants found
     """
     letters = string_to_list(LETTERS)
     var_in = []
     var_out = []
+    const = []
     units_out = []
     lines = equation.splitlines()
     for i in range(len(lines)):
@@ -263,15 +295,17 @@ def get_variables(equation, pack):
                             var.equation = lines[i].split("=")[1]
                     else:
                         if len(x) > 1 and x[-1] == 'e':
-                            handle_exponent(x, var_in, var_out, pack)
+                            handle_exponent(x, var_in, var_out, const, pack)
                         else:
-                            add_var_in(x, var_in, var_out, pack, True)
+                            add_var_in(x, var_in, var_out, const, pack, True)
             else:
                 if contains(x, letters):
-                    handle_function(x, var_in, var_out, pack)
+                    handle_function(x, var_in, var_out, const, pack)
             first = False
 
-    return var_in, var_out
+    const = format_const(const)
+
+    return var_in, var_out, const
 
 
 def format_line(line):

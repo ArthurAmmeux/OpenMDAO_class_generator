@@ -17,6 +17,7 @@ class CompData:
         self.equation = "default_ = default + 1"
         self.var_in = []
         self.var_out = []
+        self.constants = []
 
 
 class HGdata:
@@ -62,7 +63,7 @@ def total_parse(str, pack):
                 comp_data = CompData()
                 comp_data.group = g[0]
                 comp_data.name = c[0]
-                comp_data.var_in, comp_data.var_out = get_variables(c[1], pack)
+                comp_data.var_in, comp_data.var_out, comp_data.constants = get_variables(c[1], pack)
                 comp_data.equation = c[1]
                 list_of_components.append(comp_data)
 
@@ -74,7 +75,7 @@ def total_parse(str, pack):
         for c in comp:
             comp_data = CompData()
             comp_data.name = c[0]
-            comp_data.var_in, comp_data.var_out = get_variables(c[1], pack)
+            comp_data.var_in, comp_data.var_out, comp_data.constants = get_variables(c[1], pack)
             comp_data.equation = c[1]
             list_of_components.append(comp_data)
 
@@ -143,11 +144,11 @@ def gen_string(result, pack, d_check, imports=False):
         for i in range(len(comp)):
             s += "\n"
             comp_f = comp[i].equation
-            var_in, var_out = comp[i].var_in, comp[i].var_out
+            var_in, var_out, const = comp[i].var_in, comp[i].var_out, comp[i].constants
             comp_f = edit_function(var_in, var_out, comp_f)
             c_name = comp[i].name
             if d_check:
-                s += component_str_derivative(c_name, var_in, var_out, comp_f, pack)
+                s += component_str_derivative(c_name, var_in, var_out, const, comp_f, pack)
             else:
                 s += component_str(c_name, var_in, var_out, comp_f)
     else:
@@ -159,9 +160,10 @@ def gen_string(result, pack, d_check, imports=False):
                 s += "\n"
                 inputs = comp_data.var_in
                 outputs = comp_data.var_out
+                const = comp_data.constants
                 comp_f = edit_function(inputs, outputs, comp_data.equation)
                 if d_check:
-                    s += component_str_derivative(comp_data.name, inputs, outputs, comp_f, pack)
+                    s += component_str_derivative(comp_data.name, inputs, outputs, const, comp_f, pack)
                 else:
                     s += component_str(comp_data.name, inputs, outputs, comp_f)
             s += "\n"
