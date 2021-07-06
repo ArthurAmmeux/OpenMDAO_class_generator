@@ -12,11 +12,11 @@ Generates code to make OpenMDAO components and groups (implementing the om.Compo
 
 - Write your equations in the __Equations__ text area with the following syntax:
 
-  - If you want to create a series of om.Component: use a hashtag followed by a space as a prefix to your component's names, you should write your component's names and then your equations after at least one line break (*Example: # Component_1*)
+  - If you want to create a series of om.Component: use a hashtag and a percent followed by a space as a prefix to your component's names, you should write your component's names and then your equations after at least one line break (*Example: #% Component_1*)
 
-  - If you want to create one or more om.Group with some om.Component: use double hashtags followed by a space as a prefix to your group's names (prefix for components is stated above), you should write your group's name and then break the line at least once and write your components as stated above (*Example: ## Group_1*)
+  - If you want to create one or more om.Group with some om.Component: a hastag and two percent followed by a space as a prefix to your group's names (prefix for components is stated above), you should write your group's name and then break the line at least once and write your components as stated above (*Example: #%% Group_1*)
 
-  - To create higher level groups (groups that will contain other groups) just use as many hashtags as the level of your group as a decorator (*Example: #### Higher_Group*)
+  - To create higher level groups (groups that will contain other groups) just use a hashtag and as many percent as the level of your group as a decorator (*Example: #%%% Higher_Group*)
 the groups following in your text with the next lower level of hashtags will be added to your higher level group.
 
   - /!\ Your first line should always be either a Group or a Component
@@ -29,7 +29,7 @@ the groups following in your text with the next lower level of hashtags will be 
 
 - Examples of correct syntax are available in __Ipyvuetify GUI__ in the second and third blocks of code
 
-- You can then specify which packages you want to import in the generated code in the __Packages to import__ text area by simply typing the name of the package you want to import, if you want a shortened name, then just type "package_name" as "shortened_name". To import multiple packages, just add a comma between the names. By default numpy is imported as np, this can be necessary for the non initiazed input variables as they will use "np.nan" as a default value as well as for analytic derivatives so it is advised not to remove this package. Keep in mind that the imported packages will have an impact on what the program detects as constant or a function as opposed to a variable
+- You can then specify which packages you want to import in the generated code in the __Packages to import__ text area by simply tping regular python syntax (*import pack1, import pack2 as pk2, from pack3 import func*). To import multiple packages, just add a linebreak between them. By default numpy is imported as np, this can be necessary for the non initialized input variables as they will use "np.nan" as a default value as well as for analytic derivatives so it is advised not to remove this package. Keep in mind that the imported packages will have an impact on what the program detects as constant or a function as opposed to a variable.
 
 - There is another way to write your equations that allows you to test them before generating the code, you can simply add as many cells to the notebook as you like, write your equations in these cells and when you are done, run all your relevant cells in order and then set the __First cell__ and __Last cell__ as the number In[ ] of your first cell and last cell, finally click on the __Copy Cells__ button and all your equations will appear in the text area. To facilitate the procedure, you can use the *# Init* decorator to initialize your variables (the program will take the initial values as default values for those variables), the *# Import* decorator to import packages that will be imported in the final code and the *# Exclude* decorator to specify that the program should ignore a certain cell.
 
