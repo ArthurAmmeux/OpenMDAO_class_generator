@@ -21,6 +21,8 @@ the groups following in your text with the next lower level of hashtags will be 
 
   - /!\ Your first line should always be either a Group or a Component
 
+  - /!\ Comments are supported but you should only use # and not begin your comment with % or [
+
 - The equations syntax has to be understandable by python (* to multiply, / to divide ...), variables do not need to be declared, you should only write one equation per line and your equations should be in logical order. Functions are supported by the program and this means that a variable containing parentheses will not be recognised (if you are using functions from a specific package, dont forget to type the name of the package in the __Packages to import__ text area)
 
 - You can add units to output variables by adding a #[your_unit] decorator at the end of the line where you define the output variable (*Example: y = x + 1 #[kg]*), this unit will still be modifiable afterwards 
