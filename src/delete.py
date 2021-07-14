@@ -1,4 +1,9 @@
 def delete_var(result, index):
+    """
+    :param result: data structure containing all information about a group
+    :param index: index of the variable to be deleted in the group
+    :return: deletes the selected variable from the group
+    """
     i = 0
     for g in result:
         for c in g[1]:

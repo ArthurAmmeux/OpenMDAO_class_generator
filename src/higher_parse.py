@@ -38,14 +38,14 @@ def format_group(gr):
 
 
 def find_decorator(str):
-    dec = "###"
+    dec = "#%%%"
     i = 0
     while i < len(str):
         if str[i] == "#":
             d = "#"
             j = 1
-            while str[i + j] == "#":
-                d += "#"
+            while str[i + j] == "%":
+                d += "%"
                 j += 1
             if str[i + j] == " " and len(d) > len(dec):
                 dec = d
@@ -77,26 +77,26 @@ def parse_higher(str):
 
 
 TEXT = "\n" \
-       "####### Group1\n" \
-       "###### Component1\n" \
+       "#%%%%%%% Group1\n" \
+       "#%%%%%% Component1\n" \
        "\n" \
        "\n" \
        "x = y*3 +2\n" \
        "z = w**2 +a*4\n" \
        "\n" \
-       "##### Component2\n" \
+       "#%%%%% Component2\n" \
        "a = b + c*2\n" \
        "d = e + f\n" \
-       "####### Group2\n" \
+       "#%%%%%%% Group2\n" \
        "\n" \
        "\n" \
-       "## Component3\n" \
+       "#%% Component3\n" \
        "\n" \
        "\n" \
        "x = y*3 +5\n" \
        "z = w**2 +a*3\n" \
        "\n" \
-       "# Component4\n" \
+       "#% Component4\n" \
        "a = b + c*6\n" \
        "d = e + f*3\n" \
        "\n"

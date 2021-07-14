@@ -38,7 +38,7 @@ def is_group(str):
     :param str: input string to be tested
     :return: True if the string contains a group
     """
-    if "## " in str:
+    if "#%% " in str:
         return True
     return False
 
@@ -85,7 +85,7 @@ def total_parse(str, pack):
 
 
 def is_higher_group(str):
-    if '### ' in str:
+    if '#%%% ' in str:
         return True
     return False
 
@@ -125,12 +125,13 @@ def aggregate_result(hg_data):
         return result
 
 
-def gen_string(result, pack, d_check, imports=False):
+def gen_string(result, pack, d_check, imports=False, black=True):
     """
     :param imports: boolean to specify if imports are required
     :param pack: list of packages that the user wants to import (instances of the Pack class)
     :param result: a list of group names associated with their list_of_components containing CompData instances
     :param d_check: boolean to specify if derivatives are to be analytic
+    :param black: boolean than enables to use black to reformat the string
     :return: a string with groups and their associated components as om.Groups and om.Components and a list
     of strings with an element being a component or highest level group
     """
@@ -141,6 +142,7 @@ def gen_string(result, pack, d_check, imports=False):
         s += "import openmdao.api as om\n"
         if len(pack) > 0:
             s += pp.string_pack(pack)
+        s += "\n"
         for i in range(len(comp)):
             s += "\n"
             comp_f = comp[i].equation
@@ -148,9 +150,9 @@ def gen_string(result, pack, d_check, imports=False):
             comp_f = edit_function(var_in, var_out, comp_f)
             c_name = comp[i].name
             if d_check:
-                s += component_str_derivative(c_name, var_in, var_out, const, comp_f, pack)
+                s += component_str_derivative(c_name, var_in, var_out, const, comp_f, pack, black=black)
             else:
-                s += component_str(c_name, var_in, var_out, comp_f)
+                s += component_str(c_name, var_in, var_out, comp_f, black=black)
     else:
         for i in range(len(result)):
             c_data = [[comp_data.name, comp_data.name] for comp_data in result[i][1]]
@@ -163,31 +165,32 @@ def gen_string(result, pack, d_check, imports=False):
                 const = comp_data.constants
                 comp_f = edit_function(inputs, outputs, comp_data.equation)
                 if d_check:
-                    s += component_str_derivative(comp_data.name, inputs, outputs, const, comp_f, pack)
+                    s += component_str_derivative(comp_data.name, inputs, outputs, const, comp_f, pack, black=black)
                 else:
-                    s += component_str(comp_data.name, inputs, outputs, comp_f)
+                    s += component_str(comp_data.name, inputs, outputs, comp_f, black=black)
             s += "\n"
             ls.append(s)
     return [s, ls]
 
 
-def rec_gen_string(hg_data, pack, d_check):
+def rec_gen_string(hg_data, pack, d_check, black=True):
     """
     :param hg_data: higher group data to generate a string from
     :param pack: list of packages that the user wants to import
     :param d_check: boolean to specify if derivatives are to be analytic
+    :param black: boolean than enables to use black to reformat the string
     :return: generated string
     """
     s = ""
     if hg_data.last:
         names = [[hg_data.children[i][0], hg_data.children[i][0]] for i in range(len(hg_data.children))]
         s += group_str(hg_data.name, names, 0, pack) + "\n"
-        s += gen_string(hg_data.children, pack, d_check)[0]
+        s += gen_string(hg_data.children, pack, d_check, black=black)[0]
     else:
         names = [[hg_data.children[i].name, hg_data.children[i].name] for i in range(len(hg_data.children))]
         s += group_str(hg_data.name, names, 0, pack) + "\n"
         for child in hg_data.children:
-            s += rec_gen_string(child, pack, d_check)
+            s += rec_gen_string(child, pack, d_check, black=black)
     return s + "\n"
 
 
@@ -218,50 +221,55 @@ def multi_rec_gen_string(hg_data, pack, d_check):
 
 
 TEXT = "\n" \
-       "## Group1\n" \
-       "# Component1\n" \
+       "#%% Group1\n" \
+       "#% Component1\n" \
        "\n" \
        "\n" \
        "x = y*3 +2\n" \
        "z = w**2 +a*4\n" \
        "\n" \
-       "# Component2\n" \
+       "#% Component2\n" \
        "a = b_/(c_ + c**2)\n" \
        "d = e + f\n" \
-       "## Group2\n" \
+       "#%% Group2\n" \
        "\n" \
        "\n" \
-       "# Component3\n" \
+       "#% Component3\n" \
        "\n" \
        "\n" \
        "x = y*3 +5\n" \
        "z = w**2 +a*3\n" \
        "\n" \
-       "# Component4\n" \
+       "#% Component4\n" \
        "a = b + c*6\n" \
        "d = e + f*3\n" \
        "\n"
 
 TEXT2 = "\n" \
-        "#### HHG1\n" \
-        "### HG1\n" \
-        "## G1\n" \
-        "# C1\n" \
-        "y = x+1\n" \
-        "### HG2\n" \
-        "## G2\n" \
-        "# C2\n" \
+        "#%%%% HHG1\n" \
+        "\n" \
+        "#%%% HG1\n" \
+        "#%% G1\n" \
+        "#% C1\n" \
+        "y = x+1 #Comment behind equation\n" \
+        "# COMMENT HERE\n" \
+        "''' SECOND COMMENT '''\n" \
+        "z = y**2 + x\n" \
+        "#%%% HG2\n" \
+        "#%% G2\n" \
+        "#% C2\n" \
         "y = z+1\n" \
-        "#### HHG2\n" \
-        "### HG3\n" \
-        "## G3\n" \
-        "# C1\n" \
+        "#%%%% HHG2\n" \
+        "#%%% HG3\n" \
+        "#%% G3\n" \
+        "#% C1\n" \
         "y = x+1\n"
 
 
 def main():
     # print(aggregate_result(recursive_parse(TEXT2)))
-    print(multi_rec_gen_string(recursive_parse(TEXT2, pack=[]), [], True))
+    s, l = multi_rec_gen_string(recursive_parse(TEXT2, pack=[]), [], True)
+    print(s)
 
 
 if __name__ == '__main__':

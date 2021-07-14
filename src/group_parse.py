@@ -42,7 +42,7 @@ def parse_group(str):
     :param str: input string
     :return: a list of group names and their associated raw text
     """
-    p_str = re.split(r"[#]#\s", str)
+    p_str = re.split(r"#%%\s", str)
     groups = []
 
     for x in p_str:
@@ -59,26 +59,26 @@ def parse_group(str):
 
 
 TEXT = "\n" \
-       "## Group1\n" \
-       "# Component1\n" \
+       "#%% Group1\n" \
+       "#% Component1\n" \
        "\n" \
        "\n" \
        "x = y*3 +2\n" \
        "z = w**2 +a*4\n" \
        "\n" \
-       "# Component2\n" \
+       "#% Component2\n" \
        "a = b + c*2\n" \
        "d = e + f\n" \
-       "## Group2\n" \
+       "#%% Group2\n" \
        "\n" \
        "\n" \
-       "# Component3\n" \
+       "#% Component3\n" \
        "\n" \
        "\n" \
        "x = y*3 +5\n" \
        "z = w**2 +a*3\n" \
        "\n" \
-       "# Component4\n" \
+       "#% Component4\n" \
        "a = b + c*6\n" \
        "d = e + f*3\n" \
        "\n"

@@ -6,6 +6,12 @@ LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 
 def get_derivatives(var, pack, const):
+    """
+    :param var: output variable to get the derivatives from
+    :param pack: list of packages imported
+    :param const: list of the constants to handle
+    :return: a list of expressions containing derivatives relative to every input variable that affects var
+    """
     der = []
     ns = {}
     var.equation = format_equation(var.equation, pack)
@@ -27,6 +33,12 @@ def get_derivatives(var, pack, const):
 
 
 def parse_eq_rec(var, pack):
+    """
+    :param var: output variable to get the derivatives from
+    :param pack: list of packages imported
+    :return: an equation where intermediate variables are recursively replaced by their expression relative to input
+    variables
+    """
     eq_str = format_equation(var.equation, pack)
     for p in var.param:
         if p.output:
@@ -35,6 +47,11 @@ def parse_eq_rec(var, pack):
 
 
 def get_input_param(var, param):
+    """
+    :param var: output variable to get the derivatives from
+    :param param: lists of variables var depends on
+    :return: a list of input variables that var really depends on (without intermediate variables)
+    """
     param_ = param
     for p in var.param:
         if p not in param_:
@@ -46,6 +63,11 @@ def get_input_param(var, param):
 
 
 def format_equation(eq_str, pack):
+    """
+    :param eq_str: the expression to format
+    :param pack: list of packages imported
+    :return: an expression without the package prefixes so that sympy can handle it
+    """
     for p in pack:
         if p.short:
             pre = p.nick + "."
@@ -56,6 +78,12 @@ def format_equation(eq_str, pack):
 
 
 def format_derivative(der, const):
+    """
+    :param der: a list of expressions containing derivatives relative to every input variable that affects var
+    :param const: list of the constants to handle
+    :return: adds back the package prefixes to the functions and constants
+    (the function will always get np. but the constants keep the original package prefix)
+    """
     der_list = []
     index = 0
     for i in range(1, len(der)):

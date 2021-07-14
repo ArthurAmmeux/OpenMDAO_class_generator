@@ -1,6 +1,6 @@
 import re
 
-RE_SYMBOLS = r"[-=+*/%><)\s\t]+"
+RE_SYMBOLS = r"[-=+*/%><):\s\t]+"
 KEYWORDS = [":", "if", "else", "elif", "if:", "else:", "elif:", "True", "False", "True:", "False:"]
 PARENTHESES = ["("]
 DIGITS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
@@ -25,7 +25,7 @@ class Variable:
         param = "\n"
         for p in self.param:
             param += str(p) + "\n"
-        return "symbol: " + self.symbol + " name: " + self.name + " param: " + param + "equation: " + self.equation
+        return "symbol: " + self.symbol + " name: " + self.name + " param:( " + param + ")\nequation: " + self.equation
 
     def add_param(self, param):
         self.param.append(param)
@@ -174,8 +174,10 @@ def add_var_in(x, var_in, var_out, const, pack, add_p=False):
                         for param in last_out.param:
                             if x == param.symbol:
                                 return [False, None]
-                        var_out[-1].add_param(v_out)
-                        return [False, v_out]
+                        if x != var_out[-1].symbol:
+                            var_out[-1].add_param(v_out)
+                            return [False, v_out]
+                        return [False, None]
         else:
             const.append(Constant(x))
     return [False, None]
@@ -257,13 +259,24 @@ def get_variables(equation, pack):
     units_out = []
     lines = equation.splitlines()
     for i in range(len(lines)):
-        spt = re.split(r'[#[]', lines[i])
+        spt = lines[i].split('# [')
         if len(spt) >= 2:
             unit = spt[-1]
             if len(unit) > 1:
-                units_out.append([i, unit[:-1]])
+                f_unit = unit.split("]")[0]
+                units_out.append([i, f_unit])
             else:
                 units_out.append([i, ''])
+            lines[i] = spt[0]
+    for i in range(len(lines)):
+        spt = lines[i].split('#[')
+        if len(spt) >= 2:
+            unit = spt[-1]
+            if len(unit) > 1:
+                f_unit = unit.split("]")[0]
+                units_out.append([i, f_unit])
+            else:
+                units_out.append([i, 'None'])
             lines[i] = spt[0]
     added = False
     for i in range(len(lines)):
@@ -272,10 +285,16 @@ def get_variables(equation, pack):
             first = False
         else:
             added = False
+        if '#' in lines[i]:
+            lines[i] = lines[i].split('#', 1)[0]
+        if '"""' in lines[i]:
+            lines[i] = lines[i].split('"""', 1)[0]
+        if "'''" in lines[i]:
+            lines[i] = lines[i].split("'''", 1)[0]
         groups = re.split(RE_SYMBOLS, lines[i])
         if '' in groups:
             groups.remove('')
-        if not is_not_in(groups[0], KEYWORDS):
+        if len(groups) > 0 and not is_not_in(groups[0], KEYWORDS):
             first = False
             added = False
         if added:
@@ -331,8 +350,6 @@ def edit_function(inputs, outputs, function):
     suffix = "\n"
 
     lines = function.splitlines()
-    for i in range(len(lines)):
-        lines[i] = format_line(lines[i])
     function_ = ""
     for line in lines:
         function_ += line + "\n"
@@ -345,3 +362,20 @@ def edit_function(inputs, outputs, function):
         suffix += "outputs['{}'] = {}\n".format(outputs[i].name, outputs[i].symbol)
 
     return prefix + function_ + suffix
+
+
+TEXT = "y = x + 1\n" \
+       "if y == 0:\n" \
+       "    y = 1\n" \
+       "z = y**2 - x\n" \
+       "# Comment here\n"
+
+
+def main():
+    var_in, var_out, const = get_variables(TEXT, [])
+    print(var_in[0])
+    print(var_out[0])
+
+
+if __name__ == '__main__':
+    main()

@@ -3,7 +3,7 @@ import ipyvuetify as v
 import ipysheet
 import global_string_gen as gen_str
 from global_filegen import new_generate_file
-from parse_values import parse_values, parse_imports, format_imports
+from parse_values import parse_values, parse_imports
 from delete import delete_var
 import parse_pack as pp
 from IPython.display import display, Markdown
@@ -90,9 +90,9 @@ def init(in_):
 
     global pack_area
     pack_area = v.Textarea(
-        v_model='numpy as np',
+        v_model='import numpy as np',
         label='Packages to import',
-        placeholder='pack1 as pk1, pack2, ...',
+        placeholder='import pack1 as pk1\nimport pack2',
         clearable=True,
         rounded=True,
         auto_grow=True,
@@ -102,7 +102,7 @@ def init(in_):
 
     global function
     function = v.Textarea(
-        v_model='# Component1\ny = x + 1',
+        v_model='#% Component1\ny = x + 1',
         placeholder='Your equations here',
         label='Equations',
         clearable=True,
@@ -140,7 +140,7 @@ def copy_click(widget, event, data):
     n2 = int(copy_field_2.value) + 1
     copy = ""
     global D_VALUES
-    imports = []
+    imports = ""
     if 0 < n1 < n2 <= len(IN):
         for cell in IN[n1:n2]:
             if len(cell) >= 6:
@@ -158,7 +158,7 @@ def copy_click(widget, event, data):
                 copy += cell + "\n\n"
     function.v_model = copy
     if len(imports) > 0:
-        pack_area.v_model = format_imports(imports)
+        pack_area.v_model = imports
 
 
 def inner_analysis_in(c, var_in, i, group_cells, del_but):

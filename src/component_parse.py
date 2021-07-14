@@ -42,7 +42,7 @@ def parse_comp(str):
     :param str: input string
     :return: a list of component names and their associated raw equations
     """
-    p_str = re.split(r"[#]\s", str)
+    p_str = re.split(r"#%\s", str)
     components = []
 
     for x in p_str:
@@ -59,13 +59,13 @@ def parse_comp(str):
 
 
 TEXT = "\n" \
-       "# Component1\n" \
+       "#% Component1\n" \
        "\n" \
-       "\n" \
+       "# comment here\n" \
        "x = y*3 +2\n" \
        "z = w**2 +a*4\n" \
        "\n" \
-       "# Component2\n" \
+       "#% Component2\n" \
        "a = b + c*2\n" \
        "d = e + f\n" \
        "\n"

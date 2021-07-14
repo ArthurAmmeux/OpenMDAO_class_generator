@@ -1,4 +1,9 @@
 def parse_values(cell, d_values):
+    """
+    :param cell: ipython cell content as a string
+    :param d_values: default values for output parameters
+    :return: gets the default values in the specified cell
+    """
     lines = cell.split("\n")
     for line in lines:
         if "=" in line:
@@ -10,14 +15,12 @@ def parse_values(cell, d_values):
 
 
 def parse_imports(cell):
-    imports = []
-    lines = cell.split("\n")
-    for line in lines:
-        if "import" in line:
-            line_ = line.replace("import", "")
-            line_ = line_.strip()
-            imports.append(line_)
-    return imports
+    """
+    :param cell: ipython cell content as a string
+    :return: removes #imports
+    """
+    cell_ = cell.split("\n", 1)[1]
+    return cell_
 
 
 def format_imports(imports):

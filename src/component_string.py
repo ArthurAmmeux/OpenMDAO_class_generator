@@ -3,12 +3,13 @@ import derivative as d
 import subprocess
 
 
-def component_str(c_name, inputs, outputs, comp_f):
+def component_str(c_name, inputs, outputs, comp_f, black=True):
     """
     :param c_name: component name
     :param inputs: list of input variables "renamed"
     :param outputs: list of output variables "renamed"
     :param comp_f: edited computation function
+    :param black: boolean than enables to use black to reformat the string
     :return: a string containing the code of an om.Component
     """
     s = ""
@@ -28,15 +29,17 @@ def component_str(c_name, inputs, outputs, comp_f):
     s += "\tdef compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):\n"
     s += indent(comp_f, prefix="\t\t") + "\n"
 
-    try:
-        byt = subprocess.check_output("black --code " + '"' + s + '"')
-        s = byt.decode("unicode_escape")
-    except subprocess.CalledProcessError:
-        pass
+    if black:
+        try:
+            byt = subprocess.check_output("black --code " + '"' + s + '"')
+            byt = byt.replace(b"\r", b"")
+            s = byt.decode("ascii")
+        except subprocess.CalledProcessError:
+            pass
     return s
 
 
-def component_str_derivative(c_name, inputs, outputs, const, comp_f, pack):
+def component_str_derivative(c_name, inputs, outputs, const, comp_f, pack, black=True):
     """
     :param c_name: component name
     :param inputs: list of input variables "renamed"
@@ -44,6 +47,7 @@ def component_str_derivative(c_name, inputs, outputs, const, comp_f, pack):
     :param const: list of constants present in the component
     :param comp_f: edited computation function
     :param pack: list of packages that the user wants to import (instances of the Pack class)
+    :param black: boolean than enables to use black to reformat the string
     :return: a string containing the code of an om.Component
     """
     s = ""
@@ -88,9 +92,11 @@ def component_str_derivative(c_name, inputs, outputs, const, comp_f, pack):
             s += "\t\tJ['{}', '{}'] = ".format(out.name, input_param[j].name) + der[j] + "\n"
         s += "\n"
 
-    try:
-        byt = subprocess.check_output("black --code " + '"' + s + '"')
-        s = byt.decode("unicode_escape")
-    except subprocess.CalledProcessError:
-        pass
+    if black:
+        try:
+            byt = subprocess.check_output("black --code " + '"' + s + '"')
+            byt = byt.replace(b"\r", b"")
+            s = byt.decode("ascii")
+        except subprocess.CalledProcessError:
+            pass
     return s

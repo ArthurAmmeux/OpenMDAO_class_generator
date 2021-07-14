@@ -29,7 +29,7 @@ def generate_file(result, pack, d_check):
     if result[0][0] is None and len(result) == 1:
         comp = result[0][1]
         f_name = comp[0].name
-        f = open_file(f_name)
+        f, f_name = open_file(f_name)
         f.write("import openmdao.api as om\n")
         if len(pack) > 0:
             f.write(pp.string_pack(pack))
@@ -72,7 +72,7 @@ def new_generate_file(hg_data, pack, d_check):
         generate_file(hg_data.children, pack, d_check)
     else:
         for child in hg_data.children:
-            s = gs.rec_gen_string(child, pack, d_check)
+            s = gs.rec_gen_string(child, pack, d_check, black=False)
             f_name = child.name
             f, f_name = open_file(f_name)
             f.write("import openmdao.api as om\n")
