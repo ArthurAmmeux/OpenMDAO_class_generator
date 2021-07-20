@@ -71,7 +71,7 @@ def component_str_derivative(c_name, inputs, outputs, const, comp_f, pack, black
         input_param = d.get_input_param(var_out, [])
         if len(input_param) > 0:
             if len(input_param) == 1:
-                param_name = "'{}'".format(var_out.param[0].name)
+                param_name = "'{}'".format(input_param[0].name)
             else:
                 param_name = "["
                 for p in input_param:
