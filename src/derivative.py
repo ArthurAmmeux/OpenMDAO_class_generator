@@ -1,6 +1,7 @@
 from sympy import *
 from variable_recognition import Variable, Constant
 from parse_pack import Pack
+import re
 
 LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -42,7 +43,8 @@ def parse_eq_rec(var, pack):
     eq_str = format_equation(var.equation, pack)
     for p in var.param:
         if p.output:
-            eq_str = eq_str.replace(p.symbol, '(' + parse_eq_rec(p, pack) + ')')
+            repl = '(' + parse_eq_rec(p, pack) + ')'
+            eq_str = re.sub(r'(?<=\W)' + p.symbol + r'(?=\W)', repl, eq_str)
     return eq_str
 
 
@@ -144,14 +146,14 @@ def format_derivative(der, const):
     return der_fin
 
 
-DER = "pi*pisinpicostanpi + pi /(x+(sin(y)*cos(x)) + pi"
+DER = "pi*pisinpicostanpi + pi /(x+(tan(y)*cos(x)) + pi"
 CONST = [Constant("np.pi")]
 
 p1 = Pack(name="numpy", short=True, nick="np")
 p2 = Pack(name="mat", short=False, nick="")
 packs = [p1, p2]
 
-expr = "np.log(y) + mat.exp(z**2) + np.sin(u)"
+expr = "np.log(y) + mat.exp(z**2) + np.tan(u)"
 expr2 = "y**2 + np.cos(z)"
 
 var1 = Variable("x", output=True)
