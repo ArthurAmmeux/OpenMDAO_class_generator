@@ -44,7 +44,7 @@ def parse_eq_rec(var, pack):
     for p in var.param:
         if p.output:
             repl = '(' + parse_eq_rec(p, pack) + ')'
-            eq_str = re.sub(r'(?<=\W)' + p.symbol + r'(?=\W)', repl, eq_str)
+            eq_str = re.sub(r'(?<=\b)' + p.symbol + r'(?=\b)', repl, eq_str)
     return eq_str
 
 
