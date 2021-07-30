@@ -60,14 +60,42 @@ def modify_str(str, comp_naming):
         for i in range(i1, i2):
             equations += lines[i] + "\n"
 
-        # if re.search(r'self.\w+(', equations):
-            # equations = hm.handle_method(equations, str)
+        method_calls_iter = re.finditer(r'self.\w+\([\w, (/*+-]*\)', equations)
+        method_calls = []
+        for match in method_calls_iter:
+            op = match[0].count("(")
+            cl = match[0].count(")")
+            index_m = match.end()
+            method_call = match[0]
+            while op != cl:
+                method_call += equations[index_m]
+                op = method_call.count("(")
+                cl = method_call.count(")")
+                index_m += 1
+            method_calls.append(method_call)
+        while method_calls:
+            equations = hm.handle_method(method_calls, equations, str, pack)
+            method_calls_iter = re.finditer(r'self.\w+\([\w, (/*+-]*\)', equations)
+            method_calls = []
+            for match in method_calls_iter:
+                op = match[0].count("(")
+                cl = match[0].count(")")
+                index_m = match.end()
+                method_call = match[0]
+                while op != cl:
+                    method_call += equations[index_m]
+                    op = method_call.count("(")
+                    cl = method_call.count(")")
+                    index_m += 1
+                method_calls.append(method_call)
+
         inputs, outputs, const = vr.get_variables(equations, pack)
         fio.update_variables(inputs, outputs, f_inputs, f_outputs)
         ls = ds.derivative_str(inputs, outputs, const, pack)
 
         if index == len(comp) - 1:
             ct += last
+
         if "def setup_partials" in ct:
             set1 = ct.split("setup_partials(self):")
             set2 = set1[1].split("def ", 1)
@@ -141,11 +169,21 @@ def add_derivative(file_name, m_name, exc, dir, check, outfile="", outdir=""):
     str = f.read()
 
     if "(om.ExplicitComponent)" in str and "compute_partials(" not in str:
-        f_str = modify_str(str, "(om.ExplicitComponent)")
+        try:
+            f_str = modify_str(str, "(om.ExplicitComponent)")
+        except Exception:
+            exc[0] = True
+            exit()
+            f_str = None
         if check:
             check_derivatives(f_str, "(om.ExplicitComponent)", exc)
     elif "(ExplicitComponent)" in str and "compute_partials(" not in str:
-        f_str = modify_str(str, "(ExplicitComponent)")
+        try:
+            f_str = modify_str(str, "(ExplicitComponent)")
+        except Exception:
+            exc[0] = True
+            exit()
+            f_str = None
         if check:
             check_derivatives(f_str, "(ExplicitComponent)", exc)
     else:
@@ -234,70 +272,6 @@ def main():
                   flush=True)
         else:
             print("\r*** Derivatives successfully added to " + fd_name + " in " + m_name[0] + " ***", flush=True)
-
-
-def test_main():
-    e = '''import openmdao.api as om
-import numpy as np
-
-
-class Component1(om.ExplicitComponent):
-    def setup(self):
-        self.add_input("x_name", val=0)
-        self.add_input("u_name", val=0)
-        self.add_output("y_name")
-        self.add_output("z_name")
-
-    def setup_partials(self):
-        self.declare_partials('y_name', 'x_name')
-        self.declare_partials('z_name', ['x_name', 'u_name'])
-
-    def compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):
-        x = inputs["x_name"]
-        u = inputs["u_name"]
-
-        a = 3*x + u
-        y = np.pi * x ** 2 + 1
-        z = np.sin(y + a)
-
-        outputs["y_name"] = y
-        outputs["z_name"] = z
-
-    def compute_partials(self, inputs, J, **kwargs):
-        x = inputs["x_name"]
-        u = inputs["u_name"]
-
-        J["y_name", "x_name"] = 2 * np.pi * x
-
-        J["z_name", "x_name"] = (2 * np.pi * x + 3) * np.cos(np.pi * x ** 2 + u + 3 * x + 1)
-        J["z_name", "u_name"] = np.cos(np.pi * x ** 2 + u + 3 * x + 1)
-'''
-
-    e2 = """import openmdao.api as om
-import numpy as np
-
-
-class Component1(om.ExplicitComponent):
-    def setup(self):
-        self.add_input("x_name", val=np.nan)
-        self.add_output("y_name")
-
-    def setup_partials(self):
-        self.declare_partials("y_name", "x_name")
-
-    def compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):
-        x = inputs["x_name"]
-
-        y = x + 1
-
-        outputs["y_name"] = y
-
-    def compute_partials(self, inputs, J, **kwargs):
-        x = inputs["x_name"]
-
-        J["y_name", "x_name"] = 1"""
-
-    check_derivatives(e2, "(om.ExplicitComponent)", [False, False])
 
 
 if __name__ == '__main__':
